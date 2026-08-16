@@ -1,0 +1,2352 @@
+@import "tailwindcss";
+
+/* ————————————————————————————————————————————————
+   Themes. One attribute, three identities.
+   Each theme defines its color tokens and its
+   atmosphere — how the photograph behind the first
+   screen breathes. Nothing else introduces color.
+   ———————————————————————————————————————————————— */
+
+:root,
+[data-theme="noir"] {
+  --bg: #0b0b0a;
+  /* Never a flat black: a faint warm dome of light at the top of the page,
+     settling into layered near-blacks below. */
+  --bg-layers: radial-gradient(140% 90% at 50% -10%, #16130f 0%, #0e0d0b 42%, #090807 100%);
+  --ink: #f4f1ea;
+  --ink-dim: #f4f1ea99;
+  --ink-faint: #f4f1ea4d;
+  --accent: #c8a76e;
+  --accent-bright: #e0c28c;
+  --line: #f4f1ea14;
+  --press: #f4f1ea0a;
+  /* One warm red for error text — inherited by every theme (not overridden). */
+  --danger: #cf5b41;
+  color-scheme: dark;
+
+  /* Luxury bar: slow cinematic drift, warm amber particles, darker room.
+     Grade: −20% saturation, +6% contrast, gold-tinted highlights, lifted
+     blacks. Filter order (saturate → brightness → contrast → blur) must
+     match the focus-in keyframes so the whole path interpolates. */
+  --atm-drift: 34s;
+  --atm-scale-a: 1.03;
+  --atm-scale-b: 1.07;
+  --atm-filter: saturate(0.8) brightness(0.88) contrast(1.06) blur(3px);
+  --atm-tint: rgba(212, 175, 55, 0.14);
+  --atm-lift: #131009;
+  --atm-dark: rgba(6, 5, 4, 0.55);
+  --atm-grad:
+    radial-gradient(90% 70% at 0% 100%, rgba(0, 0, 0, 0.32), transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, rgba(0, 0, 0, 0.32), transparent 55%),
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 10, 0.55) 0%,
+      rgba(18, 18, 18, 0.68) 45%,
+      rgba(5, 5, 5, 0.82) 78%,
+      #0b0b0a 100%
+    );
+  --atm-vignette: 0.4;
+  --atm-particle: rgba(228, 178, 105, 0.55);
+  --atm-particles: block;
+  --atm-bloom: rgba(228, 178, 105, 0.16);
+  --atm-sweep: rgba(255, 240, 215, 0.05);
+
+  --glass-bg: rgba(14, 13, 11, 0.5);
+  --glass-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.012) 26%,
+    rgba(0, 0, 0, 0.07) 100%
+  );
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-edge: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.02) 32%,
+    rgba(255, 255, 255, 0.07) 100%
+  );
+  --glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 30px rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="linen"] {
+  --bg: #f5f0e7;
+  --bg-layers: radial-gradient(140% 90% at 50% -10%, #fbf7f0 0%, #f5f0e7 45%, #eee7da 100%);
+  --ink: #211c15;
+  --ink-dim: #211c1599;
+  --ink-faint: #211c154d;
+  --accent: #9c5537;
+  --accent-bright: #b76b44;
+  --line: #211c1517;
+  --press: #211c1508;
+  color-scheme: light;
+
+  /* Bright café: gentle daylight movement, soft cream veil. */
+  --atm-drift: 26s;
+  --atm-scale-a: 1.02;
+  --atm-scale-b: 1.05;
+  --atm-filter: saturate(0.85) brightness(1.04) contrast(1.04) blur(2px);
+  --atm-tint: rgba(255, 214, 140, 0.12);
+  --atm-lift: #2e2a24;
+  --atm-dark: rgba(60, 52, 40, 0.3);
+  --atm-grad:
+    radial-gradient(90% 70% at 0% 100%, rgba(120, 104, 82, 0.14), transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, rgba(120, 104, 82, 0.14), transparent 55%),
+    linear-gradient(
+      180deg,
+      rgba(245, 240, 231, 0.58) 0%,
+      rgba(245, 240, 231, 0.72) 42%,
+      rgba(243, 237, 226, 0.94) 78%,
+      #f5f0e7 100%
+    );
+  --atm-vignette: 0.12;
+  --atm-particle: rgba(255, 252, 244, 0.7);
+  --atm-particles: block;
+  --atm-bloom: rgba(255, 250, 240, 0.35);
+  --atm-sweep: rgba(255, 255, 255, 0.16);
+
+  --glass-bg: rgba(250, 246, 238, 0.5);
+  --glass-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.18) 30%,
+    rgba(33, 28, 21, 0.03) 100%
+  );
+  --glass-border: rgba(33, 28, 21, 0.08);
+  --glass-edge: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.2) 32%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  --glass-shadow: 0 18px 50px rgba(33, 28, 21, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 0 30px rgba(33, 28, 21, 0.04);
+}
+
+[data-theme="forest"] {
+  --bg: #101c15;
+  --bg-layers: radial-gradient(140% 90% at 50% -10%, #17251c 0%, #111d16 45%, #0b150f 100%);
+  --ink: #eeece2;
+  --ink-dim: #eeece299;
+  --ink-faint: #eeece24d;
+  --accent: #b3a26e;
+  --accent-bright: #cdbd8b;
+  --line: #eeece214;
+  --press: #eeece20a;
+  color-scheme: dark;
+
+  /* Fine dining: museum-like stillness — barely any motion, no particles. */
+  --atm-drift: 44s;
+  --atm-scale-a: 1.02;
+  --atm-scale-b: 1.035;
+  --atm-filter: saturate(0.78) brightness(0.84) contrast(1.05) blur(3px);
+  --atm-tint: rgba(212, 175, 55, 0.09);
+  --atm-lift: #0f120c;
+  --atm-dark: rgba(4, 8, 5, 0.55);
+  --atm-grad:
+    radial-gradient(90% 70% at 0% 100%, rgba(0, 0, 0, 0.3), transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, rgba(0, 0, 0, 0.3), transparent 55%),
+    linear-gradient(
+      180deg,
+      rgba(9, 15, 11, 0.6) 0%,
+      rgba(13, 21, 16, 0.72) 42%,
+      rgba(11, 19, 14, 0.86) 78%,
+      #101c15 100%
+    );
+  --atm-vignette: 0.42;
+  --atm-particle: transparent;
+  --atm-particles: none;
+  --atm-bloom: rgba(179, 162, 110, 0.1);
+  --atm-sweep: rgba(255, 240, 215, 0.025);
+
+  --glass-bg: rgba(12, 20, 15, 0.5);
+  --glass-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045) 0%,
+    rgba(255, 255, 255, 0.01) 26%,
+    rgba(0, 0, 0, 0.07) 100%
+  );
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-edge: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.02) 32%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  --glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 30px rgba(0, 0, 0, 0.14);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --font-body: var(--font-inter);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-layers, var(--bg));
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), -apple-system, "SF Pro Display", sans-serif;
+  font-weight: 500;
+  overscroll-behavior-y: none;
+  transition: background 400ms ease, color 400ms ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ————————————————————————————————————————————————
+   Rows. Press physics live here: quick settle on
+   touch-down, spring overshoot on release.
+   ———————————————————————————————————————————————— */
+
+.row {
+  transform: scale(1);
+  transition: transform 250ms cubic-bezier(0.34, 1.3, 0.5, 1),
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.row:active {
+  transform: scale(0.97);
+  background-color: var(--press);
+  transition: transform 140ms cubic-bezier(0.3, 0.7, 0.4, 1),
+    background-color 80ms ease;
+}
+
+.row-label {
+  transition: transform 220ms ease;
+}
+
+.row .row-icon {
+  transition: transform 250ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+
+.row:active .row-icon {
+  transform: scale(0.9);
+}
+
+/* Desktop hover: the row warms, the icon brightens, an arrow arrives. */
+.row-arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: none) {
+  .row-arrow {
+    display: none;
+  }
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background-color: var(--press);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  }
+  .row:hover .row-icon {
+    filter: brightness(1.25);
+  }
+  .row:hover .row-label {
+    transform: translateX(2px);
+  }
+  .row:hover .row-arrow {
+    opacity: 0.55;
+    transform: none;
+  }
+}
+
+/* Tap ripple: a small gold bloom from the touch point. Spawned by JS at
+   the pointer's coordinates, gone 600ms later. */
+@keyframes ripple-grow {
+  to {
+    transform: translate(-50%, -50%) scale(15);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.22;
+  transform: translate(-50%, -50%) scale(1);
+  animation: ripple-grow 600ms ease-out forwards;
+}
+
+/* WiFi: press → the icon pulses like it's searching → the check springs
+   in with one sparkle. Honest magic — it says copied, because it copied. */
+@keyframes wifi-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+}
+
+.wifi-busy {
+  animation: wifi-pulse 300ms ease-in-out 2;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pop-in {
+  animation: pop-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes sparkle-fade {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-20deg);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2) rotate(12deg);
+  }
+}
+
+.sparkle {
+  animation: sparkle-fade 900ms ease-out both;
+}
+
+/* The AI row breathes a faint gold halo every 8 seconds — a quiet
+   "tap me" no other row gets. */
+@keyframes ai-glow {
+  0%, 10%, 100% {
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+  }
+  5% {
+    filter: drop-shadow(0 0 7px var(--accent));
+  }
+}
+
+.row[data-key="ai"] .row-icon {
+  animation: ai-glow 8s ease-in-out infinite;
+}
+
+/* Theme morph: while .theming is on the root, every color in the page
+   crossfades over 800ms instead of snapping. The class is applied only
+   for the duration of the switch. */
+.theming,
+.theming *,
+.theming *::before,
+.theming *::after {
+  transition:
+    background-color 800ms ease,
+    border-color 800ms ease,
+    color 800ms ease,
+    fill 800ms ease,
+    stroke 800ms ease !important;
+}
+
+/* ————————————————————————————————————————————————
+   Entrance choreography. The full sequence:
+   0ms      dark, blurred room only
+   250ms    the restaurant comes into focus (1000ms)
+   450ms    name rises in (700ms)
+   600ms    location + hours follow (600ms)
+   820ms    the glass card materializes — blur, border
+            and body arrive together (900ms spring)
+   1150ms+  rows slide in from the left, 70ms apart
+   1680ms+  dots, wordmark, scroll cue close the scene
+   Runs once, then gets out of the way.
+   ———————————————————————————————————————————————— */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.intro-title {
+  animation: rise-in 700ms cubic-bezier(0.33, 1, 0.68, 1) 450ms both;
+}
+
+.intro-meta {
+  animation: rise-in 600ms cubic-bezier(0.33, 1, 0.68, 1) 600ms both;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.rise-list > * {
+  animation: row-in 450ms cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.rise-list > :nth-child(1) { animation-delay: 1150ms; }
+.rise-list > :nth-child(2) { animation-delay: 1220ms; }
+.rise-list > :nth-child(3) { animation-delay: 1290ms; }
+.rise-list > :nth-child(4) { animation-delay: 1360ms; }
+.rise-list > :nth-child(5) { animation-delay: 1430ms; }
+.rise-list > :nth-child(6) { animation-delay: 1500ms; }
+.rise-list > :nth-child(7) { animation-delay: 1570ms; }
+
+.intro-foot > :nth-child(1) {
+  animation: fade-in 500ms ease-out 1680ms both;
+}
+.intro-foot > :nth-child(2) {
+  animation: fade-in 500ms ease-out 1790ms both;
+}
+/* The cue fades to the breathe cycle's resting opacity, then breathes —
+   the handoff lands on the same value so there's no pop. */
+@keyframes cue-in {
+  from { opacity: 0; }
+  to { opacity: 0.35; }
+}
+
+.intro-foot > :nth-child(3) {
+  animation: cue-in 500ms ease-out 1900ms both,
+    cue-breathe 3.2s ease-in-out 2400ms infinite;
+}
+
+/* ————————————————————————————————————————————————
+   Atmosphere. The photograph breathes: an ultra-slow
+   Ken Burns drift the eye feels rather than sees.
+   Every layer above it exists to make the photo feel
+   photographed, not animated.
+   ———————————————————————————————————————————————— */
+
+@keyframes atm-drift {
+  from {
+    transform: scale(var(--atm-scale-a)) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(var(--atm-scale-b)) translate3d(-1.4%, 0.9%, 0);
+  }
+}
+
+.atm-media {
+  filter: var(--atm-filter);
+  animation: atm-drift var(--atm-drift) linear infinite alternate;
+  will-change: transform;
+}
+
+.atm-grad {
+  background: var(--atm-grad);
+}
+
+.atm-vignette {
+  background: radial-gradient(
+    120% 90% at 50% 38%,
+    transparent 52%,
+    rgba(0, 0, 0, var(--atm-vignette)) 100%
+  );
+}
+
+.atm-bloom {
+  background: radial-gradient(
+    closest-side,
+    var(--atm-bloom),
+    transparent 70%
+  );
+}
+
+.atm-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* Warm dust motes drifting up through the light. Positions and cadence are
+   deliberately irregular; each rises, glows faintly, and dissolves. */
+@keyframes prt-float {
+  0% {
+    transform: translate3d(0, 12px, 0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.24;
+  }
+  55% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: translate3d(10px, -46px, 0);
+    opacity: 0;
+  }
+}
+
+.prt {
+  display: var(--atm-particles);
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--atm-particle);
+  box-shadow: 0 0 12px 4px var(--atm-particle);
+  animation: prt-float linear infinite;
+  pointer-events: none;
+}
+
+.prt:nth-child(1) { width: 3px; height: 3px; left: 16%; top: 62%; animation-duration: 19s; }
+.prt:nth-child(2) { width: 2px; height: 2px; left: 34%; top: 44%; animation-duration: 26s; animation-delay: -8s; }
+.prt:nth-child(3) { width: 4px; height: 4px; left: 58%; top: 70%; animation-duration: 22s; animation-delay: -14s; }
+.prt:nth-child(4) { width: 2px; height: 2px; left: 72%; top: 36%; animation-duration: 29s; animation-delay: -4s; }
+.prt:nth-child(5) { width: 3px; height: 3px; left: 85%; top: 58%; animation-duration: 24s; animation-delay: -18s; }
+.prt:nth-child(6) { width: 2px; height: 2px; left: 45%; top: 28%; animation-duration: 31s; animation-delay: -11s; }
+
+/* Stage 1 → 2 of the load sequence. For the first 250ms the room is dark
+   and out of focus; then over one second it sharpens and warms, like the
+   restaurant coming into focus. Keyframes and resting value share one
+   filter-function order (saturate → brightness → contrast → blur) so the
+   whole path interpolates. */
+@keyframes focus-in {
+  from {
+    filter: saturate(0.9) brightness(0.55) contrast(1) blur(22px);
+  }
+  to {
+    filter: var(--atm-filter);
+  }
+}
+
+.atm-focus {
+  filter: var(--atm-filter);
+  animation: focus-in 1000ms cubic-bezier(0.33, 1, 0.68, 1) 250ms both;
+}
+
+/* Extra darkness that burns off as the photo finds focus. */
+@keyframes dark-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.atm-dark {
+  background: var(--atm-dark);
+  animation: dark-out 1000ms cubic-bezier(0.33, 1, 0.68, 1) 250ms both;
+}
+
+/* Cinematic grade, applied as light rather than filters: a gold wash that
+   blends into the photo's highlights, and a warm floor that lifts true
+   blacks so nothing in frame is ever #000. */
+.atm-tint {
+  background: var(--atm-tint);
+  mix-blend-mode: overlay;
+}
+
+.atm-lift {
+  background: var(--atm-lift);
+  mix-blend-mode: lighten;
+}
+
+/* A pass of light crossing the room every ~17 seconds. */
+@keyframes sweep-pass {
+  0% {
+    transform: translateX(-70%);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(70%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(70%);
+    opacity: 0;
+  }
+}
+
+.atm-sweep {
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    var(--atm-sweep) 50%,
+    transparent 58%
+  );
+  animation: sweep-pass 17s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Fine dining flickers like candlelight; the other rooms hold steady. */
+@keyframes candle {
+  0%, 100% { opacity: 0.78; }
+  28% { opacity: 1; }
+  54% { opacity: 0.7; }
+  76% { opacity: 0.92; }
+}
+
+[data-theme="forest"] .atm-bloom {
+  animation: candle 5s ease-in-out infinite;
+}
+
+/* Ambient light behind the card — a 3–5% radial glow strolling
+   left to right over thirty seconds. Felt, never seen. */
+@keyframes amb-drift {
+  from { transform: translateX(-6%); }
+  to { transform: translateX(6%); }
+}
+
+.amb {
+  background: radial-gradient(closest-side, var(--accent), transparent 70%);
+  opacity: 0.04;
+  animation: amb-drift 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ————————————————————————————————————————————————
+   Glass. Not glassmorphism — hotel lobby material:
+   translucent, deeply blurred, a whisper of an edge.
+   ———————————————————————————————————————————————— */
+
+.glass {
+  background-color: var(--glass-bg);
+  background-image: var(--glass-grad);
+  -webkit-backdrop-filter: blur(28px) saturate(1.1);
+  backdrop-filter: blur(28px) saturate(1.1);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Second border pass: a 1px ring whose brightness varies around the frame —
+   catching light at the top edge like real frosted glass. Same mask-ring
+   technique as .bord; browsers that can't compose masks skip it. */
+@supports ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 1.5rem;
+    padding: 1px;
+    background: var(--glass-edge);
+    pointer-events: none;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+}
+
+/* The card breathes: ±3px over twenty seconds, like it's resting on air.
+   The float lives on a wrapper so it never fights the entrance spring. */
+@keyframes float-breathe {
+  0%, 100% { transform: translateY(-3px); }
+  50% { transform: translateY(3px); }
+}
+
+.float {
+  animation: float-breathe 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Card entrance (stage 5): the glass materializes — opacity, lift, scale,
+   border and backdrop blur all arrive on one 900ms spring. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+    border-color: transparent;
+    -webkit-backdrop-filter: blur(0px) saturate(1);
+    backdrop-filter: blur(0px) saturate(1);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    border-color: var(--glass-border);
+    -webkit-backdrop-filter: blur(28px) saturate(1.1);
+    backdrop-filter: blur(28px) saturate(1.1);
+  }
+}
+
+.card-in {
+  animation: card-in 900ms cubic-bezier(0.3, 1.2, 0.4, 1) 820ms both;
+}
+
+/* A point of light walks the card's border once every 12 seconds.
+   The ring is cut with a mask; browsers that can't compose masks
+   simply never see it. */
+.bord {
+  display: none;
+}
+
+@supports ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  .bord {
+    display: block;
+    position: absolute;
+    inset: 0;
+    border-radius: 1.5rem;
+    padding: 1px;
+    opacity: 0.45;
+    pointer-events: none;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+
+  @keyframes bord-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .bord::before {
+    content: "";
+    position: absolute;
+    inset: -150%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 316deg,
+      var(--accent) 338deg,
+      transparent 360deg
+    );
+    animation: bord-spin 12s linear infinite;
+  }
+}
+
+/* Scroll cue: one slow breath, forever. */
+@keyframes cue-breathe {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(5px);
+    opacity: 0.6;
+  }
+}
+
+.cue {
+  animation: cue-breathe 3.2s ease-in-out infinite;
+}
+
+/* ————————————————————————————————————————————————
+   Scroll choreography. Each section owns a different
+   entrance; all of them are transforms + opacity only,
+   composited on the GPU, and never block interaction.
+   ———————————————————————————————————————————————— */
+
+.rv {
+  opacity: 0;
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    clip-path 950ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rv.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Rise — the default: quiet lift from below. */
+.rv-rise {
+  transform: translateY(26px);
+}
+
+/* Scale — for imagery: rises 40px while settling from 98% to full size. */
+.rv-scale {
+  transform: translateY(40px) scale(0.98);
+  transition:
+    opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Stagger offsets for masonry lanes — neighbours never land together. */
+.rv-d1 { transition-delay: 120ms; }
+.rv-d2 { transition-delay: 240ms; }
+
+/* Mask — image unveils sideways, like a curtain drawn. */
+.rv-mask {
+  clip-path: inset(0 88% 0 0 round 20px);
+}
+.rv-mask-r {
+  clip-path: inset(0 0 0 88% round 20px);
+}
+.rv-mask.in,
+.rv-mask-r.in {
+  clip-path: inset(0 0 0 0 round 20px);
+}
+
+/* Section titles: letters drift together as the heading rises. The
+   letter-spacing move is one 700ms shot on a short line of text, so the
+   layout cost is negligible. */
+.rv-stagger h2 {
+  letter-spacing: 0.08em;
+  transition: letter-spacing 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rv-stagger.in h2 {
+  letter-spacing: -0.02em;
+}
+
+/* Stagger — parent reveals, children follow one by one. */
+.rv-stagger > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.rv-stagger.in > :nth-child(1) { transition-delay: 0ms; }
+.rv-stagger.in > :nth-child(2) { transition-delay: 90ms; }
+.rv-stagger.in > :nth-child(3) { transition-delay: 180ms; }
+.rv-stagger.in > :nth-child(4) { transition-delay: 270ms; }
+.rv-stagger.in > :nth-child(5) { transition-delay: 360ms; }
+.rv-stagger.in > :nth-child(6) { transition-delay: 450ms; }
+.rv-stagger.in > * {
+  opacity: 1;
+  transform: none;
+}
+
+/* Soft parallax — scroll-driven, pure CSS, Chrome first.
+   Browsers without scroll timelines simply see a still image. */
+@supports (animation-timeline: view()) {
+  @keyframes plx-slide {
+    from {
+      transform: translateY(-5%) scale(1.12);
+    }
+    to {
+      transform: translateY(5%) scale(1.12);
+    }
+  }
+  .plx {
+    animation: plx-slide linear both;
+    animation-timeline: view();
+  }
+}
+
+/* Specials rail: hide the scrollbar, keep the scroll. */
+.rail {
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* Special cards: picked up slowly — the card lifts, the photo leans in,
+   the title rises 2px, the price warms. Desktop only. */
+.lift {
+  transition:
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 250ms ease;
+}
+.lift img {
+  transition: transform 250ms ease;
+}
+.lift h3 {
+  transition: transform 250ms ease;
+}
+.lift .price {
+  transition: color 250ms ease;
+}
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.1);
+  }
+  .lift:hover img {
+    transform: scale(1.03);
+  }
+  .lift:hover h3 {
+    transform: translateY(-2px);
+  }
+  .lift:hover .price {
+    color: var(--accent-bright);
+  }
+}
+
+/* The map adopts the room's palette instead of Google's. */
+.map-frame {
+  filter: grayscale(1) contrast(0.92);
+}
+[data-theme="noir"] .map-frame,
+[data-theme="forest"] .map-frame {
+  filter: grayscale(1) invert(0.9) hue-rotate(180deg) contrast(0.88) brightness(0.9);
+}
+
+/* Theme-picker swatches — the only place a theme's color appears outside
+   its own token block. */
+[data-swatch="noir"] { background: #0b0b0a; }
+[data-swatch="linen"] { background: #f5f0e7; }
+[data-swatch="forest"] { background: #101c15; }
+
+/* ————————————————————————————————————————————————
+   WiFi / OTP flow. Step transitions, code inputs,
+   spinner — all reusing the app's spring vocabulary.
+   ———————————————————————————————————————————————— */
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.step-in {
+  animation: step-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* One code box. Fills with accent when it holds a digit; lifts on focus. */
+.otp-box {
+  width: 100%;
+  aspect-ratio: 1;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--press);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  caret-color: var(--accent);
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    transform 200ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.otp-box:focus {
+  outline: none;
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.otp-box[data-filled="true"] {
+  border-color: var(--accent);
+}
+
+/* Consent checkbox — square, accent when checked. */
+.consent-box {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--ink-faint);
+  border-radius: 6px;
+  transition: background-color 180ms ease, border-color 180ms ease;
+  position: relative;
+}
+.consent-box:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.consent-box:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 700ms linear infinite;
+}
+
+/* ————————————————————————————————————————————————
+   AI Host chat — message entrance + typing dots.
+   ———————————————————————————————————————————————— */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.msg-in {
+  animation: msg-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes typing {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--ink-dim);
+  animation: typing 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* Chips scroll row hides its scrollbar (reuses the rail pattern). */
+.chips {
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* ————————————————————————————————————————————————
+   Review Experience. A full-screen glass modal that
+   routes a happy guest to Google and an unhappy one to
+   private feedback. The room behind it blurs and dims;
+   the sheet arrives on one spring; a chosen star pops.
+   ———————————————————————————————————————————————— */
+
+@keyframes rv-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rv-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.rv-overlay {
+  /* Warm subtle backdrop blur */
+  background: rgba(18, 16, 12, 0.45);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  animation: rv-overlay-in 260ms ease both;
+}
+.rv-overlay-out {
+  animation: rv-overlay-out 240ms ease both;
+}
+
+/* The sheet materializes like the home card: lift + settle on one spring. On
+   phones it fills the viewport (square corners); from sm up it's a floating
+   rounded card. */
+@keyframes rv-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rv-sheet-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(12px) scale(0.99); }
+}
+.rv-sheet {
+  animation: rv-sheet-in 440ms cubic-bezier(0.3, 1.2, 0.4, 1) both;
+}
+.rv-sheet-out {
+  animation: rv-sheet-out 240ms ease both;
+}
+
+/* Make the glass edge-ring + border-walker follow the sheet's own radius, so a
+   full-screen (square) sheet on mobile doesn't show a rounded ring in a square
+   frame. */
+.rv-sheet.glass::after,
+.rv-sheet .bord {
+  border-radius: inherit;
+}
+
+/* Stars — spring on press, and a satisfying pop the moment one is chosen. The
+   fill colour comes from the icon; here we add the glow and the physics. */
+.rv-star {
+  transition: transform 200ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.rv-star:active {
+  transform: scale(0.9);
+}
+.rv-star-on {
+  filter: drop-shadow(0 2px 8px rgba(184, 155, 94, 0.32));
+}
+@keyframes rv-star-pop {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.26); }
+  100% { transform: scale(1); }
+}
+.rv-star-pick {
+  animation: rv-star-pop 440ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-overlay,
+  .rv-overlay-out,
+  .rv-sheet,
+  .rv-sheet-out,
+  .rv-star-pick {
+    animation: none;
+  }
+  .rv-star {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .intro-title,
+  .intro-meta,
+  .intro-foot > *,
+  .rise-list > *,
+  .atm-media,
+  .atm-focus,
+  .atm-sweep,
+  [data-theme="forest"] .atm-bloom,
+  .amb,
+  .prt,
+  .cue,
+  .plx,
+  .float,
+  .card-in,
+  .bord::before,
+  .ripple,
+  .wifi-busy,
+  .row[data-key="ai"] .row-icon {
+    animation: none;
+  }
+  .atm-dark {
+    display: none;
+  }
+  .row,
+  .row .row-icon,
+  .rv,
+  .rv-stagger > *,
+  .lift,
+  .row-arrow,
+  .theming,
+  .theming *,
+  .theming *::before,
+  .theming *::after {
+    transition: none !important;
+  }
+  .rv,
+  .rv-stagger > * {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .step-in,
+  .spin,
+  .msg-in,
+  .typing-dot {
+    animation: none;
+  }
+  .otp-box,
+  .consent-box {
+    transition: none;
+  }
+}
+
+/* ————————————————————————————————————————————————
+   Play & Win. Premium table games — a spinning wheel,
+   a scratch foil, a rolling number — plus the reward
+   card + claim form. Same spring vocabulary as the rest
+   of the app; never a casino. Outcome is decided on the
+   server; these are just the theatre around it.
+   ———————————————————————————————————————————————— */
+
+/* Ring spinner — used inside buttons/hubs mid-play. */
+.pw-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 2px solid var(--ink-faint);
+  border-top-color: var(--accent);
+  animation: spin 700ms linear infinite;
+}
+.pw-spinner-dark {
+  border-color: rgba(11, 11, 10, 0.3);
+  border-top-color: #0b0b0a;
+}
+
+.pw-input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: var(--press);
+  padding: 0.7rem 0.9rem;
+  font-size: 15px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 180ms ease;
+}
+.pw-input::placeholder {
+  color: var(--ink-faint);
+}
+.pw-input:focus {
+  border-color: var(--accent);
+}
+
+/* —— Spin the Wheel */
+.pw-wheel-pointer {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 19px solid var(--accent-bright);
+  z-index: 20;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
+}
+
+.pw-wheel-svg {
+  filter: drop-shadow(0 12px 34px rgba(0, 0, 0, 0.35));
+}
+
+.pw-wheel-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+}
+.pw-wheel-label-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #0b0b0a;
+}
+
+.pw-wheel-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 5.2rem;
+  height: 5.2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  z-index: 15;
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.pw-wheel-hub:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+.pw-wheel-hub:disabled {
+  cursor: default;
+}
+
+/* —— Scratch Card */
+.pw-scratch {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.06));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+@keyframes pw-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.pw-scratch-shimmer {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(100deg, var(--press) 30%, var(--line) 50%, var(--press) 70%);
+  background-size: 200% 100%;
+  animation: pw-shimmer 1.2s linear infinite;
+}
+
+/* —— Lucky Number */
+.pw-lucky {
+  overflow: hidden;
+}
+
+/* —— Reward card + QR */
+.pw-qr-tile {
+  display: inline-flex;
+  padding: 12px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.pw-qr {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+.pw-qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes pw-reward-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pw-reward-in {
+  animation: pw-reward-in 500ms cubic-bezier(0.3, 1.2, 0.4, 1) both;
+}
+
+@keyframes pw-badge-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.pw-reward-badge {
+  animation: pw-badge-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.pw-intro-badge {
+  animation: pw-badge-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1) 100ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-spinner,
+  .pw-scratch-shimmer,
+  .pw-reward-in,
+  .pw-reward-badge,
+  .pw-intro-badge {
+    animation: none;
+  }
+  .pw-wheel-hub {
+    transition: none;
+  }
+}
+
+/* —— Flip the Card (3D pick-a-card) */
+.pw-flip-scene {
+  display: block;
+  width: 100%;
+  perspective: 900px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.pw-flip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4.1;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.3, 1.2, 0.4, 1);
+}
+.pw-flip[data-flipped="true"] {
+  transform: rotateY(180deg);
+}
+.pw-flip-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 1rem;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.pw-flip-front {
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 60%
+  );
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.pw-flip-mark {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.6;
+}
+.pw-flip-back {
+  transform: rotateY(180deg);
+  background-color: var(--glass-bg);
+  border: 1px solid;
+  box-shadow: var(--glass-shadow);
+}
+.pw-flip-title {
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* —— Memory Match */
+.pw-mem-scene {
+  display: block;
+  width: 100%;
+  perspective: 700px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.pw-mem {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transition: transform 380ms cubic-bezier(0.3, 1.1, 0.4, 1);
+}
+.pw-mem[data-flipped="true"] {
+  transform: rotateY(180deg);
+}
+.pw-mem-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.pw-mem-front {
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    transparent 60%
+  );
+  border: 1px solid var(--glass-border);
+}
+.pw-mem-back {
+  transform: rotateY(180deg);
+  background: var(--press);
+  border: 1px solid var(--glass-border);
+}
+.pw-mem[data-matched="true"] .pw-mem-back {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent),
+    0 6px 18px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* —— Tap Challenge */
+.pw-tap-arena {
+  aspect-ratio: 1 / 1.05;
+  background-color: var(--glass-bg);
+  background-image: var(--glass-grad);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.pw-tap-target {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border: none;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b0b0a;
+  background: radial-gradient(circle at 35% 30%, var(--accent-bright), var(--accent));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pw-tap-target:active {
+  transform: scale(0.9);
+}
+.pw-tap-start {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 26px;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* —— Daily Mystery Box */
+.pw-box-btn {
+  position: relative;
+  padding: 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.pw-box {
+  position: relative;
+  width: 11rem;
+  height: 11rem;
+}
+.pw-box-glow {
+  position: absolute;
+  inset: -30%;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, var(--accent-bright), transparent 70%);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 600ms ease, transform 700ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+.pw-box[data-open="true"] .pw-box-glow {
+  opacity: 0.5;
+  transform: scale(1.15);
+}
+.pw-box-body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 9.5rem;
+  height: 8rem;
+  border-radius: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b0b0a;
+  background: linear-gradient(165deg, var(--accent-bright), var(--accent) 55%, #9c7b45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.25);
+}
+.pw-box-body::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 16px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, #0b0b0a 20%, transparent);
+}
+.pw-box-lid {
+  position: absolute;
+  left: 50%;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  width: 10.4rem;
+  height: 2.7rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(165deg, var(--accent-bright), var(--accent));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transform-origin: 50% 100%;
+  transition: transform 520ms cubic-bezier(0.3, 1.2, 0.4, 1), opacity 520ms ease;
+}
+.pw-box[data-open="true"] .pw-box-lid {
+  transform: translateX(-50%) translateY(-3.6rem) rotate(-16deg);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-flip,
+  .pw-mem,
+  .pw-box-glow,
+  .pw-box-lid,
+  .pw-tap-target {
+    transition: none !important;
+  }
+}
+
+/* ————————————————————————————————————————————————
+   Aries Tap Lobby. A light, editorial microsite — the
+   multi-brand landing shown when the table tag is
+   tapped. Its palette lives entirely under `.lb`, so
+   the rest of the app (which is noir) is untouched;
+   :has() paints the document ivory only on this page
+   so overscroll never flashes the dark background.
+   Nothing here uses the theme tokens on purpose.
+   ———————————————————————————————————————————————— */
+
+.lb {
+  --lb-bg: #f6f5f0;          /* soft ivory */
+  --lb-surface: #ffffff;      /* pure white cards */
+  --lb-ink: #1a1712;          /* warm near-black */
+  --lb-dim: #6a6459;          /* muted stone */
+  --lb-faint: #a7a093;
+  --lb-line: rgba(26, 23, 18, 0.08);
+  --lb-hair: rgba(26, 23, 18, 0.16);
+  --lb-gold: #b89b5e;         /* accent — decorative only */
+  --lb-gold-ink: #8a6d39;     /* accent that meets contrast as text on white */
+  --lb-press: rgba(26, 23, 18, 0.035);
+
+  background: var(--lb-bg);
+  color: var(--lb-ink);
+  font-family: var(--font-body), -apple-system, "SF Pro Display", sans-serif;
+  font-weight: 500;
+}
+
+html:has(.lb) {
+  background: #f6f5f0;
+}
+body:has(.lb) {
+  background: #f6f5f0;
+}
+
+.lb ::selection {
+  background: var(--lb-gold);
+  color: #fff;
+}
+
+/* Editorial serif for the venue wordmarks (Playfair Display), with a graceful
+   system fallback before the webfont loads. */
+.lb-serif {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+}
+
+/* Hairline section divider that fades at both ends. */
+.lb-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--lb-hair) 16%,
+    var(--lb-hair) 84%,
+    transparent
+  );
+}
+
+/* ——— Action card. A ceramic tile: white on ivory, a thin edge, a soft
+   resting shadow. On hover it lifts 4px and grows a hair while the glyph
+   tilts toward the light; on press it compresses like something real.
+   No bounce anywhere — every curve settles without overshoot. */
+.lb-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(26, 23, 18, 0.06);
+  transition:
+    transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 250ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 250ms ease,
+    background-color 200ms ease;
+}
+.lb-card .lb-ico {
+  transition: transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: var(--lb-hair);
+    box-shadow: 0 18px 40px rgba(26, 23, 18, 0.09);
+  }
+  .lb-card:hover .lb-ico {
+    transform: rotate(4deg) scale(1.08);
+  }
+}
+.lb-card:active {
+  transform: scale(0.98);
+  background-color: var(--lb-press);
+  transition-duration: 120ms;
+}
+
+/* ——— Photo tile. A card whose background is a Taffeta photograph: the image
+   sits under a legibility scrim, the type rides on top in warm white, and on
+   hover the whole tile lifts while the photo eases in a touch closer. */
+.lb-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow:
+    0 1px 2px rgba(26, 23, 18, 0.05),
+    0 16px 34px -22px rgba(26, 23, 18, 0.4);
+  transition:
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lb-tile .lb-tile-img {
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lb-tile .lb-arrow {
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition:
+    opacity 360ms ease,
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-tile:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 2px 6px rgba(26, 23, 18, 0.06),
+      0 30px 56px -26px rgba(26, 23, 18, 0.5);
+  }
+  .lb-tile:hover .lb-tile-img {
+    transform: scale(1.06);
+  }
+  .lb-tile:hover .lb-arrow {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lb-tile:active {
+  transform: translateY(-1px) scale(0.99);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-tile,
+  .lb-tile .lb-tile-img,
+  .lb-tile .lb-arrow {
+    transition: none;
+  }
+}
+
+/* ——— Sister card. The quieter sibling: smaller, centred, same physics. */
+.lb-scard {
+  position: relative;
+  overflow: hidden;
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(26, 23, 18, 0.03),
+    0 8px 22px -20px rgba(26, 23, 18, 0.18);
+  transition:
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 400ms ease,
+    border-color 400ms ease,
+    background-color 200ms ease;
+}
+.lb-scard .lb-ico {
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-scard:hover {
+    transform: translateY(-3px);
+    border-color: var(--lb-hair);
+    box-shadow:
+      0 2px 4px rgba(26, 23, 18, 0.04),
+      0 18px 34px -24px rgba(26, 23, 18, 0.28);
+  }
+  .lb-scard:hover .lb-ico {
+    transform: translateY(-2px);
+  }
+}
+.lb-scard:active {
+  transform: scale(0.98);
+  background-color: var(--lb-press);
+}
+
+/* A not-yet-open venue action. Reads as intentional, not broken: a dashed
+   edge, no shadow, no pointer, a faint "Soon" pill. */
+.lb-soon {
+  background: transparent;
+  border: 1px dashed var(--lb-hair);
+  border-radius: 16px;
+  cursor: default;
+}
+
+/* Gallery lightbox — a calm dimmed pane the venue photos float in. */
+.lb-lightbox {
+  background: rgba(20, 17, 13, 0.82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: fade-in 240ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-card,
+  .lb-card .lb-ico,
+  .lb-card .lb-arrow,
+  .lb-scard,
+  .lb-scard .lb-ico {
+    transition: none;
+  }
+  .lb-lightbox {
+    animation: none;
+  }
+}
+
+/* ————————————————————————————————————————————————
+   Compact chips — the single-screen lobby. Everything
+   fits on one page: small photo chips for the flagship,
+   small solid chips for the sisters. Same spring feel,
+   miniaturised.
+   ———————————————————————————————————————————————— */
+
+/* Photo-backed action chip (Taffeta). */
+.lb-chip {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(26, 23, 18, 0.06),
+    0 10px 22px -16px rgba(26, 23, 18, 0.45);
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease;
+}
+.lb-chip .lb-chip-img {
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-chip:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 2px 6px rgba(26, 23, 18, 0.08),
+      0 18px 30px -18px rgba(26, 23, 18, 0.55);
+  }
+  .lb-chip:hover .lb-chip-img {
+    transform: scale(1.08);
+  }
+}
+.lb-chip:active {
+  transform: scale(0.96);
+}
+
+/* Solid chip (sister venues). */
+.lb-schip {
+  position: relative;
+  overflow: hidden;
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(26, 23, 18, 0.03),
+    0 8px 20px -18px rgba(26, 23, 18, 0.2);
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease,
+    border-color 320ms ease,
+    background-color 200ms ease;
+}
+@media (hover: hover) {
+  .lb-schip:hover {
+    transform: translateY(-2px);
+    border-color: var(--lb-hair);
+    box-shadow:
+      0 2px 4px rgba(26, 23, 18, 0.04),
+      0 14px 26px -18px rgba(26, 23, 18, 0.26);
+  }
+}
+.lb-schip:active {
+  transform: scale(0.96);
+  background-color: var(--lb-press);
+}
+
+/* Small "Soon" chip — matches the chip radius. */
+.lb-soon-chip {
+  border-radius: 14px;
+  border: 1px dashed var(--lb-hair);
+  background: transparent;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-chip,
+  .lb-chip .lb-chip-img,
+  .lb-schip {
+    transition: none;
+  }
+}
+
+/* ————————————————————————————————————————————————
+   Lobby motion. The layout above is untouched — this
+   is only choreography: a staged entrance, ceramic
+   press physics, and light that moves. Everything
+   runs on transform + opacity, composited on the
+   GPU, and whispers rather than shouts.
+   ———————————————————————————————————————————————— */
+
+/* Paper grain over the whole room — 2%, fixed. z-3 keeps it above the
+   cards but under the progress bar (z-40) and every modal (z-50). */
+@keyframes lb-grain-in {
+  from { opacity: 0; }
+  to { opacity: 0.02; }
+}
+
+.lb-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: lb-grain-in 600ms ease-out both;
+}
+
+/* ——— Entrance. One staged sequence, once, then out of the way:
+   150ms   the wordmark rises 18px
+   250ms   the tagline follows, softer
+   420ms+  cards cascade in, 70ms apart
+   1250ms  the photograph settles from 1.05
+   Every fill is `backwards` so hover physics take over the moment
+   each animation releases its element. */
+@keyframes lb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lb-in-title {
+  animation: lb-rise 700ms cubic-bezier(0.22, 0.61, 0.36, 1) 150ms backwards;
+}
+
+@keyframes lb-rise-soft {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lb-in-sub {
+  animation: lb-rise-soft 700ms cubic-bezier(0.22, 0.61, 0.36, 1) 250ms backwards;
+}
+
+@keyframes lb-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lb-in-cards > * {
+  animation: lb-card-in 550ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+}
+.lb-in-cards > :nth-child(1) { animation-delay: 420ms; }
+.lb-in-cards > :nth-child(2) { animation-delay: 490ms; }
+.lb-in-cards > :nth-child(3) { animation-delay: 560ms; }
+.lb-in-cards > :nth-child(4) { animation-delay: 630ms; }
+.lb-in-cards > :nth-child(5) { animation-delay: 700ms; }
+
+@keyframes lb-photo-in {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lb-in-photo {
+  animation: lb-photo-in 1400ms cubic-bezier(0.22, 0.61, 0.36, 1) 1250ms backwards;
+}
+
+/* ——— The photograph is never still: a fifteen-second breath between
+   1.02 and 1.00. `alternate` means there is no visible restart. */
+@keyframes lb-kenburns {
+  from { transform: scale(1.02); }
+  to { transform: scale(1); }
+}
+
+.lb-kenburns {
+  animation: lb-kenburns 15s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ——— Soft parallax — scroll-driven, pure CSS, progressive. The header
+   drifts as it exits; the photo slides a few percent slower than the
+   page. Browsers without scroll timelines see a still page. */
+@supports (animation-timeline: view()) {
+  @keyframes lb-plx-img-slide {
+    from { transform: translateY(-2.5%) scale(1.07); }
+    to { transform: translateY(2.5%) scale(1.07); }
+  }
+  .lb-plx-img {
+    animation: lb-plx-img-slide linear both;
+    animation-timeline: view();
+    will-change: transform;
+  }
+
+  @keyframes lb-plx-head-drift {
+    from { transform: translateY(0); }
+    to { transform: translateY(26px); }
+  }
+  .lb-plx-head {
+    animation: lb-plx-head-drift linear both;
+    animation-timeline: view();
+    animation-range: exit 0% exit 100%;
+  }
+}
+
+/* ——— Icons live in a small wrap that breathes once every seven seconds
+   (the 2s swell sits inside a 7s cycle; each card starts at a different
+   phase via an inline delay, so they never move in unison). The wrap
+   also hosts the one-off gold sheen; the hover transform stays on the
+   glyph itself so the three motions never fight. */
+@keyframes lb-breathe {
+  0%, 28.6%, 100% { transform: scale(1); }
+  14.3% { transform: scale(1.03); }
+}
+
+.lb-ico-wrap {
+  position: relative;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: lb-breathe 7s ease-in-out infinite;
+}
+
+/* Light catching polished metal: one soft gold band crosses the glyph
+   when the card is first hovered. Runs once per hover. */
+@keyframes lb-sheen {
+  from {
+    transform: translateX(-170%) rotate(18deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(170%) rotate(18deg);
+    opacity: 0;
+  }
+}
+
+.lb-ico-wrap::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: 10%;
+  width: 60%;
+  background: linear-gradient(105deg, transparent, rgba(184, 155, 94, 0.25), transparent);
+  transform: translateX(-170%) rotate(18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .lb-card:hover .lb-ico-wrap::after {
+    animation: lb-sheen 900ms ease-out 1;
+  }
+}
+
+/* ——— Ambient light behind the wordmark: a 5% gold radial strolling
+   two pixels left and right over eighteen seconds. Felt, never seen. */
+@keyframes lb-amb-drift {
+  from { transform: translateX(-2px); }
+  to { transform: translateX(2px); }
+}
+
+.lb-amb {
+  position: absolute;
+  left: 50%;
+  top: -3rem;
+  height: 16rem;
+  width: 22rem;
+  margin-left: -11rem;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, var(--lb-gold), transparent 72%);
+  opacity: 0.05;
+  pointer-events: none;
+  animation: lb-amb-drift 18s ease-in-out infinite alternate;
+}
+
+/* ——— The seam between venues: a hairline of gold, and once every
+   twelve seconds a point of light travels across it. The container
+   clips the traveling layer so it can never cause sideways scroll. */
+.lb-divider {
+  position: relative;
+  height: 5px;
+  overflow: hidden;
+}
+
+.lb-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(184, 155, 94, 0.35) 18%,
+    rgba(184, 155, 94, 0.35) 82%,
+    transparent
+  );
+}
+
+@keyframes lb-spark-travel {
+  0% {
+    transform: translateX(-50%);
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  18% {
+    opacity: 1;
+  }
+  20%, 100% {
+    transform: translateX(50%);
+    opacity: 0;
+  }
+}
+
+.lb-divider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side at 50% 50%, rgba(224, 194, 140, 0.9), rgba(224, 194, 140, 0) 70%);
+  background-size: 44px 5px;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  transform: translateX(-50%);
+  animation: lb-spark-travel 12s linear infinite;
+}
+
+/* ——— Scroll progress: a two-pixel gold thread at the top of the
+   screen. The bar itself is driven by a ten-line client component,
+   transform-only. */
+.lb-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.lb-progress-bar {
+  height: 100%;
+  background: var(--lb-gold);
+  opacity: 0.35;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+
+/* ——— Scroll reveals, tuned for the lobby: a 32px rise on one 700ms
+   expo curve, children 80ms apart, once, never replayed. */
+.lb .rv {
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lb .rv-rise {
+  transform: translateY(32px);
+}
+.lb .rv-stagger > * {
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lb .rv-stagger.in > :nth-child(1) { transition-delay: 0ms; }
+.lb .rv-stagger.in > :nth-child(2) { transition-delay: 80ms; }
+.lb .rv-stagger.in > :nth-child(3) { transition-delay: 160ms; }
+.lb .rv.in {
+  transform: none;
+}
+
+/* Ripple, quieter on ivory: under ten percent. */
+.lb .ripple {
+  opacity: 0.08;
+}
+
+/* ——— Reduced motion: parallax, breathing, sheen, sparkle, grain-fade
+   and the Ken Burns breath all stop; content is simply present. */
+@media (prefers-reduced-motion: reduce) {
+  .lb-grain,
+  .lb-in-title,
+  .lb-in-sub,
+  .lb-in-cards > *,
+  .lb-in-photo,
+  .lb-kenburns,
+  .lb-ico-wrap,
+  .lb-ico-wrap::after,
+  .lb-amb,
+  .lb-divider::after,
+  .lb-plx-img,
+  .lb-plx-head {
+    animation: none !important;
+  }
+  .lb .rv,
+  .lb .rv-rise,
+  .lb .rv-stagger > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lb-card,
+  .lb-card .lb-ico {
+    transition: none;
+  }
+}
+
+/* ——— The house triptych. Three portrait frames that behave like the cards:
+   a soft resting shadow, a 3px lift, and the photograph easing in a touch
+   closer under the frame. The image is clipped by the tile, so the zoom is
+   felt at the edges rather than seen as movement. */
+.lb-shot {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--lb-line);
+  background: var(--lb-press);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(26, 23, 18, 0.06);
+  transition:
+    transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 250ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.lb-shot-img {
+  transition: transform 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-shot:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px rgba(26, 23, 18, 0.1);
+  }
+  .lb-shot:hover .lb-shot-img {
+    transform: scale(1.06);
+  }
+}
+.lb-shot:active {
+  transform: scale(0.98);
+  transition-duration: 120ms;
+}
+
+/* The sister venues get a single wide frame instead of a triptych — one
+   cinematic 2:1 view of the room, same physics as the portrait tiles. */
+.lb-shot-wide {
+  aspect-ratio: 2 / 1;
+  border-radius: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-shot,
+  .lb-shot-img {
+    transition: none;
+  }
+}
+
+/* ——— Menu sheet. Rises from the bottom on a phone, floats as a card from sm
+   up. Each row is a quiet white tile that warms and shifts its arrow on
+   approach — the same vocabulary as the action cards, one step calmer. */
+@keyframes lb-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lb-sheet {
+  animation: lb-sheet-in 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  box-shadow: 0 -12px 44px rgba(26, 23, 18, 0.18);
+}
+@media (min-width: 640px) {
+  .lb-sheet {
+    box-shadow: 0 24px 60px rgba(26, 23, 18, 0.28);
+  }
+}
+
+.lb-menu-row {
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
+  box-shadow: 0 4px 14px rgba(26, 23, 18, 0.04);
+  transition:
+    transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 250ms ease,
+    border-color 250ms ease;
+}
+.lb-menu-arrow {
+  transition: transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (hover: hover) {
+  .lb-menu-row:hover {
+    transform: translateY(-2px);
+    border-color: var(--lb-hair);
+    box-shadow: 0 12px 26px rgba(26, 23, 18, 0.09);
+  }
+  .lb-menu-row:hover .lb-menu-arrow {
+    transform: translate(2px, -2px);
+  }
+}
+.lb-menu-row:active {
+  transform: scale(0.985);
+  transition-duration: 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-sheet,
+  .lb-menu-row,
+  .lb-menu-arrow {
+    animation: none;
+    transition: none;
+  }
+}
