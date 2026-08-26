@@ -6,6 +6,7 @@ import { PhotoStrip } from "@/components/lobby/PhotoStrip";
 import { StoryModal } from "@/components/lobby/StoryModal";
 import { ScrollProgress } from "@/components/lobby/ScrollProgress";
 import { ReviewExperience } from "@/components/review/ReviewExperience";
+import { TapBeacon } from "@/components/events/TapBeacon";
 import { taffeta, taffetaActions, lobbyVenues } from "@/lib/content";
 import { reviewSettings } from "@/lib/review/config";
 
@@ -21,6 +22,7 @@ const breatheDelays = [0, 1.4, 2.9, 4.3, 5.7];
 export default function Home() {
   return (
     <main className="lb min-h-svh">
+      <TapBeacon />
       <ScrollProgress />
       {/* Paper texture over the whole page — 2%, felt not seen. */}
       <div className="lb-grain" aria-hidden />

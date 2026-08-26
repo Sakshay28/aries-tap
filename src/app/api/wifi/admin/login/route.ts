@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { signToken, sha256Hex } from "@/lib/wifi/session";
 import { ADMIN_COOKIE, ADMIN_TTL_SECONDS } from "@/lib/wifi/config";
+import { DEPLOYMENT_TENANT_ID } from "@/lib/events/tenant";
 
 // Single-password admin login. The password is compared by hash and the result
 // is a signed, httpOnly session cookie. In dev, if ADMIN_PASSWORD is unset we
@@ -22,7 +23,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Wrong password." }, { status: 401 });
   }
 
-  const token = await signToken({ kind: "admin" }, ADMIN_TTL_SECONDS);
+  // Record which tenant this owner administers, so the dashboard's reads and its
+  // realtime subscription are scoped to exactly this business server-side.
+  const token = await signToken({ kind: "admin", tenantId: DEPLOYMENT_TENANT_ID }, ADMIN_TTL_SECONDS);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ADMIN_COOKIE, token, {
     httpOnly: true,

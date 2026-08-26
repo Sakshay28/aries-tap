@@ -11,6 +11,8 @@
 
 import { headers } from "next/headers";
 import { verifyTurnstile } from "@/lib/wifi/request";
+import { ingestEvent } from "@/lib/events/ingest";
+import type { TapEventType } from "@/lib/events/types";
 import { analyzeFeedback } from "./ai";
 import { MAX_META_BYTES, TENANT_ID, reviewSettings } from "./config";
 import { clientContext, clientIp, hashIp } from "./context";
@@ -53,6 +55,15 @@ const EVENT_NAMES: ReviewEventName[] = [
   "cancelled",
 ];
 
+// Bridge the review funnel into the one authoritative event stream so reviews
+// show up on the owner dashboard's live feed and Overview alongside NFC taps and
+// WhatsApp clicks. Only the meaningful moments cross over — the internal funnel
+// steps (google_returned, cancelled, …) stay inside the review analytics.
+const REVIEW_BRIDGE: Partial<Record<ReviewEventName, TapEventType>> = {
+  opened: "REVIEW_STARTED",
+  rating_selected: "REVIEW_RECEIVED",
+};
+
 // —————————————————————————————— recordEvent
 
 // Fire-and-forget from the client's perspective. Returns a boolean only so the
@@ -87,6 +98,25 @@ export async function recordEvent(input: EventInput): Promise<{ ok: boolean }> {
       ipHash,
       userAgent: (h.get("user-agent") || "").slice(0, 400),
     });
+
+    // Mirror the meaningful moments into the unified stream (best-effort; the
+    // review path already rate-limited, so we don't double-throttle).
+    const bridged = REVIEW_BRIDGE[input.name];
+    if (bridged) {
+      await ingestEvent(
+        {
+          type: bridged,
+          tagCode: null, // reviews aren't attributed to a physical tag
+          sessionId,
+          visitorId: typeof input.meta?.visitor === "string" ? input.meta.visitor : null,
+          rating: isRating(input.rating) ? input.rating : null,
+          meta: { origin: "review" },
+          source: "server",
+        },
+        h,
+        { rateLimit: false, tenantId: TENANT_ID }
+      );
+    }
     return { ok: true };
   } catch (err) {
     console.error("[review] recordEvent failed", err);
@@ -227,6 +257,22 @@ export async function submitFeedback(input: FeedbackInput): Promise<SubmitResult
       ipHash,
       userAgent: (h.get("user-agent") || "").slice(0, 400),
     });
+
+    // Authoritative unified event: a private review landed. Server-minted, so it
+    // can't be forged through the public beacon.
+    await ingestEvent(
+      {
+        type: "REVIEW_SUBMITTED",
+        tagCode: null,
+        sessionId,
+        rating: rating as Rating,
+        meta: { photos: urls.length, ...(table ? { table } : {}) },
+        source: "server",
+        idempotencyKey: `review:${id}`,
+      },
+      h,
+      { rateLimit: false, tenantId: TENANT_ID }
+    );
 
     return { ok: true, id };
   } catch (err) {

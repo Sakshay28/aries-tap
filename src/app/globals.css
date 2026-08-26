@@ -2350,3 +2350,272 @@ body:has(.lb) {
     transition: none;
   }
 }
+
+/* =====================================================================
+   Owner Dashboard  (/admin/overview) — mobile-first, self-contained.
+   Scoped under .od-root with its own warm-neutral palette so it stays
+   light and premium regardless of the venue's guest-facing theme, and
+   never leaks into the other admin pages.
+   ===================================================================== */
+
+.od-root {
+  --od-bg: #f4f1ea;
+  --od-bg-2: #efeae0;
+  --od-surface: #ffffff;
+  --od-surface-2: #faf8f3;
+  --od-border: rgba(31, 27, 22, 0.08);
+  --od-border-2: rgba(31, 27, 22, 0.14);
+  --od-elev: 0 1px 2px rgba(31, 27, 22, 0.04), 0 6px 20px rgba(31, 27, 22, 0.05);
+  --od-elev-nav: 0 -1px 0 rgba(31, 27, 22, 0.06), 0 -8px 24px rgba(31, 27, 22, 0.06);
+
+  --od-ink: #201c16;
+  --od-ink-2: #6a6357;
+  --od-ink-3: #9b9384;
+
+  --od-accent: #a2692a;         /* warm bronze — reads well on white */
+  --od-accent-soft: #f3e9d8;
+  --od-espresso: #241f19;       /* premium dark for primary actions */
+
+  --od-tap: #bd7a1c;   --od-tap-bg: #f7ecd4;
+  --od-wa: #1f9d57;    --od-wa-bg: #e3f3e9;
+  --od-review: #c78a1c; --od-review-bg: #f8edd3;
+  --od-view: #56708f;  --od-view-bg: #e9eef5;
+  --od-cta: #7a5ad0;   --od-cta-bg: #eee9fb;
+
+  --od-live: #1f9d57;
+  --od-warn: #c2871c;
+  --od-off: #9b9384;
+
+  min-height: 100svh;
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--od-bg-2) 0%, var(--od-bg) 46%) fixed;
+  color: var(--od-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-color-scheme: dark) {
+  .od-root {
+    --od-bg: #14120f;
+    --od-bg-2: #191611;
+    --od-surface: #201c17;
+    --od-surface-2: #241f19;
+    --od-border: rgba(244, 241, 234, 0.09);
+    --od-border-2: rgba(244, 241, 234, 0.16);
+    --od-elev: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --od-elev-nav: 0 -1px 0 rgba(0, 0, 0, 0.4), 0 -8px 24px rgba(0, 0, 0, 0.5);
+    --od-ink: #f3efe6;
+    --od-ink-2: #b3ab9c;
+    --od-ink-3: #857e70;
+    --od-accent: #d3a153;
+    --od-accent-soft: #2e2619;
+    --od-espresso: #f3efe6;
+    --od-tap-bg: #2c2415;  --od-wa-bg: #16281d;
+    --od-review-bg: #2d2614; --od-view-bg: #1b2430; --od-cta-bg: #241f33;
+  }
+}
+
+/* Layout shell ------------------------------------------------------- */
+.od-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.od-scroll {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+/* Surfaces ----------------------------------------------------------- */
+.od-card {
+  background: var(--od-surface);
+  border: 1px solid var(--od-border);
+  border-radius: 20px;
+  box-shadow: var(--od-elev);
+}
+.od-inset {
+  background: var(--od-surface-2);
+  border: 1px solid var(--od-border);
+  border-radius: 16px;
+}
+
+/* Section heading ---------------------------------------------------- */
+.od-h {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--od-ink-2);
+}
+
+/* Pressable feedback for tappable rows/cards ------------------------- */
+.od-press {
+  transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.od-press:active { transform: scale(0.985); }
+
+/* Primary / secondary buttons --------------------------------------- */
+.od-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 0.12s ease, opacity 0.15s ease, background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.od-btn:active { transform: scale(0.98); }
+.od-btn-primary { background: var(--od-espresso); color: var(--od-bg); }
+@media (prefers-color-scheme: dark) { .od-btn-primary { color: #14120f; } }
+.od-btn-soft {
+  background: var(--od-surface);
+  color: var(--od-ink);
+  border: 1px solid var(--od-border-2);
+}
+
+/* Bottom navigation -------------------------------------------------- */
+.od-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--od-surface) 88%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-top: 1px solid var(--od-border);
+  box-shadow: var(--od-elev-nav);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.od-nav-row {
+  max-width: 480px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.od-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 58px;
+  padding-top: 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--od-ink-3);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.18s ease;
+}
+.od-nav-item[aria-current="page"] { color: var(--od-accent); }
+/* Active state: the icon settles into a soft accent pill — clear at a glance,
+   quiet when idle. */
+.od-nav-ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 30px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 0.22s ease, transform 0.18s ease;
+}
+.od-nav-item[aria-current="page"] .od-nav-ic { background: var(--od-accent-soft); }
+.od-nav-item:active .od-nav-ic { transform: scale(0.88); }
+
+/* Mini bar chart -------------------------------------------------------- */
+.od-chart-col {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.od-chart-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--od-ink) 5%, transparent);
+}
+.od-chart-bar {
+  position: relative;
+  width: 100%;
+  border-radius: 5px 5px 3px 3px;
+  transition: height 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Live status dot ---------------------------------------------------- */
+.od-live-dot {
+  width: 8px; height: 8px; border-radius: 999px; flex: none;
+  background: var(--od-live);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--od-live) 60%, transparent);
+  animation: od-pulse 2s ease-out infinite;
+}
+.od-live-dot[data-state="reconnecting"] { background: var(--od-warn); animation: od-blink 1s steps(2) infinite; box-shadow: none; }
+.od-live-dot[data-state="offline"] { background: var(--od-off); animation: none; box-shadow: none; }
+
+@keyframes od-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--od-live) 55%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes od-blink { 50% { opacity: 0.35; } }
+
+/* Event / metric entrance + increment ------------------------------- */
+@keyframes od-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.od-rise { animation: od-rise 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes od-flash {
+  0% { background: var(--od-accent-soft); }
+  100% { background: transparent; }
+}
+.od-flash { animation: od-flash 1.4s ease-out; }
+@keyframes od-pop { 0% { transform: scale(1); } 35% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.od-pop { animation: od-pop 0.45s ease; }
+
+/* Skeleton shimmer --------------------------------------------------- */
+.od-skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--od-surface-2);
+  border-radius: 12px;
+}
+.od-skel::after {
+  content: "";
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--od-ink) 6%, transparent), transparent);
+  animation: od-shimmer 1.3s infinite;
+}
+@keyframes od-shimmer { 100% { transform: translateX(100%); } }
+
+/* Focus visibility --------------------------------------------------- */
+.od-root :focus-visible {
+  outline: 2px solid var(--od-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Desktop: top tab bar + wider canvas ------------------------------- */
+/* Base first, so the media query below can override it (order matters). */
+.od-desk-nav { display: none; }
+
+@media (min-width: 768px) {
+  .od-shell { max-width: 760px; }
+  .od-nav { display: none; }
+  .od-scroll { padding-bottom: 32px; }
+  .od-desk-nav { display: flex; }
+}
+@media (min-width: 1024px) {
+  .od-shell { max-width: 940px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .od-root *,
+  .od-root *::after,
+  .od-root *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

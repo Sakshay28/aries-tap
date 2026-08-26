@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Lock, Download, Users, CalendarDays, Star, Gamepad2 } from "lucide-react";
+import { Loader2, Lock, Download, Users, CalendarDays, Star, Gamepad2, Activity } from "lucide-react";
 import { business } from "@/lib/content";
 
 type Lead = { id: string; phone: string; venue: string; createdAt: string };
@@ -117,6 +117,13 @@ export function AdminClient() {
           <p className="text-[13px] text-ink-dim">{business.name} · WiFi leads</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/admin/overview"
+            className="row flex items-center gap-2 rounded-full border border-line px-4 py-2 text-[13px] font-medium"
+          >
+            <Activity size={15} strokeWidth={1.75} className="text-accent" aria-hidden />
+            Live
+          </Link>
           <Link
             href="/admin/play"
             className="row flex items-center gap-2 rounded-full border border-line px-4 py-2 text-[13px] font-medium"

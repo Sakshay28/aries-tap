@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Sparkles } from "lucide-react";
 import { Lightbox } from "./Lightbox";
 import { taffeta, taffetaGallery, gallery } from "@/lib/content";
 import { OPEN_TAFFETA_GALLERY_EVENT } from "./events";
@@ -76,16 +74,6 @@ export function PhotoStrip() {
           ))}
         </div>
       )}
-
-      <div className="mt-2.5 flex justify-center">
-        <Link
-          href="/gallery?venue=taffeta"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--lb-gold-ink)]/25 bg-[color:var(--lb-gold-ink)]/10 px-3.5 py-1 text-[11px] font-semibold text-[color:var(--lb-gold-ink)] transition hover:border-[color:var(--lb-gold-ink)]/50 active:scale-95"
-        >
-          <Sparkles size={11} />
-          <span>View all 20 gallery photographs →</span>
-        </Link>
-      </div>
 
       <Lightbox
         photos={viewerPhotos}

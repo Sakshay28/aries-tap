@@ -611,7 +611,10 @@ export const location = {
   phoneDisplay: "+91 98200 00000",
   mapsUrl: "https://maps.google.com/?q=Taffeta+Coffee+Jawahar+Circle+Jaipur",
   mapEmbed: "https://maps.google.com/maps?q=Taffeta+Coffee+Jawahar+Circle+Jaipur&z=15&output=embed",
-  bookUrl: "https://wa.me/919820000000?text=Table%20for%20two%2C%20please",
+  // Routed through the tracked redirect (not straight to wa.me) so every tap of
+  // the WhatsApp/booking CTA becomes a first-class event on the owner dashboard.
+  // The destination is still resolved server-side from `phone` above.
+  bookUrl: "/go/whatsapp/lobby",
 };
 
 export type Sister = {
