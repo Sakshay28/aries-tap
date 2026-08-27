@@ -18,6 +18,7 @@
 // dashboard catches up on its next reconnect", never to wrong data.
 
 import type { TapEvent } from "@/lib/events/types";
+import { AblyBus } from "./ably";
 
 export type EventHandler = (event: TapEvent) => void;
 
@@ -76,20 +77,38 @@ class InProcessBus implements RealtimeBus {
 
 const gb = globalThis as unknown as { __ariesBus?: RealtimeBus };
 
+// Which transport backs realtime, chosen once per process from the environment:
+//   • unset / "in-process" — the default. Zero config, single-instance/local.
+//   • "ably"               — the managed multi-instance adapter (needs a
+//                            server-side ABLY_API_KEY; see ./ably.ts).
+// AblyBus is constructed eagerly but loads no SDK until a channel is first used,
+// so importing this module never pulls Ably into a deployment that isn't using
+// it. Selection is explicit (never inferred from a stray credential) so a
+// deployment can't silently change transports.
+function createBus(): RealtimeBus {
+  const mode = (process.env.ARIES_REALTIME || "in-process").trim().toLowerCase();
+  if (mode === "ably") return new AblyBus();
+  return new InProcessBus();
+}
+
 export function getBus(): RealtimeBus {
   if (gb.__ariesBus) return gb.__ariesBus;
-  // The managed adapter is loaded only when explicitly configured, so the
-  // default deployment carries no extra dependency and no extra failure mode.
-  // (Kept synchronous-return by resolving lazily inside the adapter itself.)
-  gb.__ariesBus = new InProcessBus();
+  gb.__ariesBus = createBus();
   return gb.__ariesBus;
 }
 
 // Convenience used by the ingest pipeline. Publishing must never break a write,
-// so it's wrapped and swallowed here rather than at every call site.
+// so it's wrapped and swallowed here rather than at every call site. The managed
+// adapter returns a promise; we attach a catch so a rejected publish degrades to
+// a logged miss (recovered by the next SSE resync), never an unhandled rejection.
 export function publishEvent(event: TapEvent): void {
   try {
-    getBus().publish(event.tenantId, event);
+    const result = getBus().publish(event.tenantId, event) as unknown;
+    if (result && typeof (result as PromiseLike<void>).then === "function") {
+      Promise.resolve(result as PromiseLike<void>).catch((err) =>
+        console.error("[realtime] publish failed", err)
+      );
+    }
   } catch (err) {
     console.error("[realtime] publish failed", err);
   }

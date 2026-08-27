@@ -36,7 +36,7 @@ export type PrintedCode = {
 export const PRINTED_CODES: PrintedCode[] = [
   {
     code: "AT001",
-    fallbackUrl: "https://aries-tap.vercel.app/",
+    fallbackUrl: "https://ariestap.in/",
     label: "AT001 — first print run",
     printedOn: "2026-08-26",
   },

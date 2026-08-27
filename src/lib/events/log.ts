@@ -14,7 +14,10 @@ export type EventStage =
   | "ingest_error" // an unexpected throw in the write path
   | "stream_open" // a dashboard opened an SSE stream
   | "stream_resync" // the gap replay ran on (re)connect
-  | "stream_close"; // the stream was torn down
+  | "stream_close" // the stream was torn down
+  | "realtime_publish_error" // the managed broker (Ably) failed to publish/subscribe
+  | "authn_failure" // a request presented no/invalid session where one was required
+  | "authz_failure"; // a valid session was refused access to a resource
 
 type Fields = Record<string, string | number | boolean | null | undefined>;
 
@@ -30,6 +33,7 @@ export function logEvent(stage: EventStage, fields: Fields = {}): void {
   for (const [k, v] of Object.entries(fields)) {
     if (v !== undefined) line[k] = v;
   }
-  const sink = stage === "ingest_error" ? console.error : console.log;
+  const isError = stage === "ingest_error" || stage === "realtime_publish_error";
+  const sink = isError ? console.error : console.log;
   sink(JSON.stringify(line));
 }

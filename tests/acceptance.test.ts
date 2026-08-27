@@ -42,6 +42,18 @@ const DATA_DIR = await fs.mkdtemp(path.join(os.tmpdir(), "aries-accept-"));
 process.env.ARIES_DATA_DIR = DATA_DIR;
 if (process.env.TEST_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; // opt-in real SQL
+  // CI runs a disposable Postgres behind a local Neon HTTP proxy (the serverless
+  // driver speaks Neon's HTTP protocol, not raw TCP). When the proxy host is
+  // present, point the driver at it. Gated on the env var, so this only ever
+  // affects the CI job — never production, never a normal local run.
+  if (process.env.NEON_HTTP_PROXY_HOST) {
+    const { neonConfig } = await import("@neondatabase/serverless");
+    const host = process.env.NEON_HTTP_PROXY_HOST;
+    const port = process.env.NEON_HTTP_PROXY_PORT || "4444";
+    neonConfig.fetchEndpoint = `http://${host}:${port}/sql`;
+    neonConfig.useSecureWebSocket = false;
+    neonConfig.poolQueryViaFetch = true;
+  }
 } else {
   delete process.env.DATABASE_URL; // never touch an ambient prod DB
 }
@@ -50,6 +62,11 @@ const { insertTapEvent, listActivity, eventsSince, overviewMetrics, usingRealDb 
 import type { TagInfo } from "../src/lib/events/analytics.ts";
 
 before(() => {
+  // Fail loudly if TEST_DATABASE_URL was provided but the Postgres track wasn't
+  // selected — the CI Postgres gate must never silently pass on the JSON store.
+  if (process.env.TEST_DATABASE_URL) {
+    assert.equal(usingRealDb, true, "TEST_DATABASE_URL was set but the JSON fallback was selected");
+  }
   console.log(`[acceptance] persistence track: ${usingRealDb ? "Postgres (TEST_DATABASE_URL)" : "JSON fallback (real db.ts, temp dir)"}`);
 });
 after(async () => {

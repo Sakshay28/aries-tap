@@ -33,6 +33,23 @@ import {
 const DATABASE_URL = process.env.DATABASE_URL;
 export const usingRealDb = Boolean(DATABASE_URL);
 
+// Guard against a production deployment silently running on the JSON fallback:
+// that store is per-instance and ephemeral (os.tmpdir), so it would lose events,
+// break multi-instance dashboards, and never match the durability the dashboard
+// promises. Fail closed instead. `ARIES_DATA_DIR` is the explicit opt-in a test
+// or a deliberately file-backed self-host sets, so its presence allows the
+// fallback even under NODE_ENV=production. Only reached at request time (these
+// functions aren't called during `next build`), so the build stays green.
+function assertDurablePersistence(): void {
+  if (!usingRealDb && process.env.NODE_ENV === "production" && !process.env.ARIES_DATA_DIR) {
+    throw new Error(
+      "No DATABASE_URL in production: refusing the ephemeral, per-instance JSON " +
+        "event store. Set DATABASE_URL for durable persistence, or ARIES_DATA_DIR " +
+        "to opt into a file store explicitly."
+    );
+  }
+}
+
 // —————————————————————————————— Neon Postgres
 
 let ensured = false;
@@ -161,6 +178,7 @@ export async function insertTapEvent(
     city: string;
   }
 ): Promise<{ event: TapEvent; created: boolean }> {
+  assertDurablePersistence();
   const key = input.idempotencyKey?.trim() || null;
 
   if (usingRealDb) {
@@ -234,6 +252,7 @@ export async function listActivity(
     types?: TapEventType[];
   }
 ): Promise<{ events: TapEvent[]; nextCursor: string | null }> {
+  assertDurablePersistence();
   const limit = Math.min(Math.max(1, opts.limit ?? 40), ACTIVITY_MAX_PAGE_SIZE);
   const cur = decodeCursor(opts.cursor);
   const typeFilter = opts.types && opts.types.length ? opts.types : null;
@@ -296,6 +315,7 @@ function cmpCursorDesc(r: TapEvent, cur: { createdAt: string; id: string }): num
 // everything it missed for `tenantId`, oldest-first, capped so a long absence
 // can't pull the whole table. The DB — not the socket — is the source of truth.
 export async function eventsSince(tenantId: string, cursor: string | null): Promise<TapEvent[]> {
+  assertDurablePersistence();
   const cur = decodeCursor(cursor);
 
   if (usingRealDb) {
@@ -330,6 +350,7 @@ export async function eventsSince(tenantId: string, cursor: string | null): Prom
 // analytics.ts. `tags` comes from the QR/NFC registry (qr_codes), joined by the
 // caller so this module stays about events only.
 export async function overviewMetrics(tenantId: string, tags: TagInfo[]): Promise<OverviewMetrics> {
+  assertDurablePersistence();
   if (!usingRealDb) {
     const all = (await readJson<TapEvent>(EVENTS_FILE)).filter((r) => r.tenantId === tenantId);
     return computeOverview(all, tags);

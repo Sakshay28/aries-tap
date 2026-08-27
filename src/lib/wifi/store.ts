@@ -63,6 +63,18 @@ const upstash: Store = {
 
 const mem = new Map<string, { value: string; expiresAt: number }>();
 
+// The fallback is a per-process dev convenience, but rate-limit keys are minted
+// per unique IP/session and only removed lazily on re-access — so a long-running
+// dev server (or a warm serverless instance) would otherwise grow the map
+// without bound. Reap expired entries whenever the map crosses a threshold, so
+// its size tracks the count of *live* windows, never all keys ever seen.
+const MEM_SWEEP_THRESHOLD = 5000;
+function sweepIfLarge(): void {
+  if (mem.size <= MEM_SWEEP_THRESHOLD) return;
+  const now = Date.now();
+  for (const [k, v] of mem) if (now > v.expiresAt) mem.delete(k);
+}
+
 function memGetRaw(key: string): { value: string; expiresAt: number } | null {
   const entry = mem.get(key);
   if (!entry) return null;
@@ -78,9 +90,11 @@ const memory: Store = {
     return memGetRaw(key)?.value ?? null;
   },
   async set(key, value, ttlSeconds) {
+    sweepIfLarge();
     mem.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
   },
   async incrWithTtl(key, ttlSeconds) {
+    sweepIfLarge();
     const existing = memGetRaw(key);
     const next = existing ? String(Number(existing.value) + 1) : "1";
     const expiresAt = existing

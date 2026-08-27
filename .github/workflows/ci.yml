@@ -1,0 +1,80 @@
+name: CI
+
+# Build + the full test suite on the zero-config (JSON) track always run. A
+# second job runs the SAME acceptance suite against a disposable Postgres, so the
+# real SQL path is verified automatically instead of depending on manual
+# credentials. No production database is ever used; the Postgres here is a
+# throwaway service container destroyed with the job.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & test (JSON track)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test (real db.ts, JSON fallback)
+        run: npm test
+      # The event/dashboard/realtime subsystem must stay lint-clean. (The repo has
+      # pre-existing lint errors in unrelated Play & Win/gallery files; those are
+      # intentionally not gated here — see the sprint report.)
+      - name: Lint subsystem
+        run: npx eslint src/lib/events src/lib/realtime src/lib/qr src/app/api/dashboard src/app/api/events tests
+
+  postgres-acceptance:
+    name: Acceptance suite against disposable Postgres
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: main
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      # The @neondatabase/serverless driver speaks Neon's HTTP protocol, not raw
+      # TCP Postgres, so a Neon-compatible HTTP proxy sits in front of the
+      # throwaway Postgres. It reaches the db service by its network label.
+      neon-proxy:
+        image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+        env:
+          PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/main
+        ports:
+          - 4444:4444
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The store self-migrates: db.ts creates its tables + indexes with
+      # CREATE TABLE/INDEX IF NOT EXISTS on first query, so no separate migration
+      # step is needed — the acceptance suite bootstraps a deterministic schema.
+      - name: Acceptance suite (Postgres)
+        env:
+          # Auth/db-name for the driver; actual traffic is routed to the proxy.
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/main
+          NEON_HTTP_PROXY_HOST: localhost
+          NEON_HTTP_PROXY_PORT: "4444"
+        # The suite asserts it selected the Postgres track (fails, never silently
+        # falls back to JSON) and runs every acceptance test against real SQL.
+        run: node --experimental-strip-types --import ./tests/register-hooks.mjs --test tests/acceptance.test.ts

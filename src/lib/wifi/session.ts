@@ -17,9 +17,22 @@ function b64urlToString(s: string): string {
 }
 
 function secret(): string {
-  // In dev we fall back to a fixed key so tokens survive restarts; production
-  // must set WIFI_SESSION_SECRET (checked at go-live, see .env.example).
-  return process.env.WIFI_SESSION_SECRET || "dev-insecure-session-secret";
+  const configured = process.env.WIFI_SESSION_SECRET;
+  if (configured) return configured;
+  // Fail closed in production: the dev key is public (it's in this file), so
+  // signing real admin/session cookies with it would let anyone forge one.
+  // Refuse rather than silently downgrade — verifyToken then denies every token
+  // (safe), and signToken (login) surfaces a 500 that the server logs explain.
+  // Only reached at request time, never during `next build`.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "WIFI_SESSION_SECRET is required in production — it signs the admin and " +
+        "session cookies. Refusing the insecure development key. " +
+        "Generate one with: openssl rand -hex 32"
+    );
+  }
+  // In dev we fall back to a fixed key so tokens survive restarts.
+  return "dev-insecure-session-secret";
 }
 
 async function key(): Promise<CryptoKey> {

@@ -27,6 +27,7 @@ const HEARTBEAT_MS = 20_000;
 export async function GET(req: NextRequest) {
   const tenantId = await resolveOwnerTenant(req);
   if (!tenantId) {
+    logEvent("authz_failure", { route: "dashboard/stream" });
     return new Response("Unauthorized", { status: 401 });
   }
 

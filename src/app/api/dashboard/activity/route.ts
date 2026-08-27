@@ -10,6 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { resolveOwnerTenant } from "@/lib/events/tenant";
 import { ACTIVITY_PAGE_SIZE } from "@/lib/events/config";
 import { listActivity } from "@/lib/events/db";
+import { logEvent } from "@/lib/events/log";
 import { isTapEventType, type TapEventType } from "@/lib/events/types";
 
 export const runtime = "nodejs";
@@ -18,6 +19,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const tenantId = await resolveOwnerTenant(req);
   if (!tenantId) {
+    logEvent("authz_failure", { route: "dashboard/activity" });
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
