@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { business } from "@/lib/content";
+import { TableField } from "@/components/table/TableField";
 import { Turnstile, turnstileConfigured } from "@/components/Turnstile";
 
 type Step = "phone" | "code" | "done";
@@ -41,6 +42,7 @@ export function WifiFlow() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [consent, setConsent] = useState(false);
+  const [table, setTable] = useState("");
   const [code, setCode] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -91,6 +93,7 @@ export function WifiFlow() {
         phone,
         code: value,
         consent,
+        table,
       });
       if (status === 200) {
         const credRes = await fetch("/api/wifi/credentials");
@@ -104,7 +107,7 @@ export function WifiFlow() {
       }
       setLoading(false);
     },
-    [phone, consent, loading]
+    [phone, consent, table, loading]
   );
 
   // Build the auto-join QR once we have credentials.
@@ -203,6 +206,10 @@ export function WifiFlow() {
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
               className="w-full bg-transparent text-[16px] font-medium tracking-wide text-ink outline-none placeholder:text-ink-faint"
             />
+          </div>
+
+          <div className="mt-5">
+            <TableField value={table} onChange={setTable} />
           </div>
 
           <label className="mt-5 flex cursor-pointer items-start gap-3">

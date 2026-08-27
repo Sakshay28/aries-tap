@@ -9,6 +9,7 @@ import path from "node:path";
 export type Lead = {
   phone: string; // E.164
   venue: string;
+  table: string; // guest-supplied seat/table, "" when they skipped it
   consent: boolean;
   consentVersion: string;
   ipHash: string;
@@ -40,6 +41,11 @@ async function sql() {
         created_at  timestamptz NOT NULL DEFAULT now()
       )`;
     await q`CREATE INDEX IF NOT EXISTS wifi_leads_created_idx ON wifi_leads (created_at DESC)`;
+    // Added after the first deployments shipped. CREATE TABLE IF NOT EXISTS
+    // only ever creates — it will not add a column to a table that already
+    // exists — so an explicit, idempotent ALTER is what actually migrates the
+    // venues already running.
+    await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS table_no text NOT NULL DEFAULT ''`;
     ensured = true;
   }
   return q;
@@ -75,8 +81,8 @@ export async function insertLead(lead: Lead): Promise<void> {
   if (usingRealDb) {
     const q = await sql();
     await q`
-      INSERT INTO wifi_leads (phone, venue, consent, consent_version, ip_hash, user_agent)
-      VALUES (${lead.phone}, ${lead.venue}, ${lead.consent}, ${lead.consentVersion}, ${lead.ipHash}, ${lead.userAgent})`;
+      INSERT INTO wifi_leads (phone, venue, consent, consent_version, ip_hash, user_agent, table_no)
+      VALUES (${lead.phone}, ${lead.venue}, ${lead.consent}, ${lead.consentVersion}, ${lead.ipHash}, ${lead.userAgent}, ${lead.table})`;
     return;
   }
   // Best-effort in fallback mode: never fail a guest's WiFi because the
@@ -98,7 +104,7 @@ export async function listLeads(limit = 500): Promise<LeadRow[]> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
-      SELECT id, phone, venue, consent, consent_version, ip_hash, user_agent, created_at
+      SELECT id, phone, venue, consent, consent_version, ip_hash, user_agent, table_no, created_at
       FROM wifi_leads ORDER BY created_at DESC LIMIT ${limit}`) as Record<
       string,
       unknown
@@ -107,6 +113,7 @@ export async function listLeads(limit = 500): Promise<LeadRow[]> {
       id: String(r.id),
       phone: String(r.phone),
       venue: String(r.venue),
+      table: String(r.table_no ?? ""),
       consent: Boolean(r.consent),
       consentVersion: String(r.consent_version),
       ipHash: String(r.ip_hash),
@@ -114,7 +121,11 @@ export async function listLeads(limit = 500): Promise<LeadRow[]> {
       createdAt: new Date(r.created_at as string).toISOString(),
     }));
   }
-  return (await readJson()).slice(0, limit);
+  // Rows written before table capture existed have no `table` at all. Default
+  // it here so every consumer can treat the field as present.
+  return (await readJson())
+    .slice(0, limit)
+    .map((r) => ({ ...r, table: r.table ?? "" }));
 }
 
 export async function leadStats(): Promise<{ total: number; today: number }> {

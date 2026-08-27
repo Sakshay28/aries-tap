@@ -11,7 +11,7 @@ import { VERIFY_COOKIE, VERIFY_TTL_SECONDS, CONSENT_VERSION } from "@/lib/wifi/c
 // short-lived signed cookie that unlocks the credentials endpoint.
 
 export async function POST(req: Request) {
-  let body: { phone?: string; code?: string; consent?: boolean };
+  let body: { phone?: string; code?: string; consent?: boolean; table?: string };
   try {
     body = await req.json();
   } catch {
@@ -39,10 +39,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message, reason: result.reason }, { status });
   }
 
+  // The guest's own answer to "which table are you at?". Optional and
+  // re-sanitized here — the client already normalized it, but a client is not a
+  // validator. Bounded so a lead row can never carry a payload.
+  const table = String(body.table ?? "")
+    .replace(/[^A-Za-z0-9 \-_.]/g, "")
+    .trim()
+    .slice(0, 12)
+    .toUpperCase();
+
   // Verified — persist the lead. IP is hashed (we keep the number, not the IP).
   await insertLead({
     phone,
     venue: business.name,
+    table,
     consent: true,
     consentVersion: CONSENT_VERSION,
     ipHash: (await sha256Hex(clientIp(req))).slice(0, 32),

@@ -6,9 +6,10 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyToken } from "@/lib/wifi/session";
-import { ADMIN_COOKIE } from "@/lib/qr/config";
+import { ADMIN_COOKIE, permanentUrlFor } from "@/lib/qr/config";
 import { getQrById } from "@/lib/qr/db";
 import { qrPngForCode, qrSvgForCode } from "@/lib/qr/generate";
+import { brandedQrSvg } from "@/lib/qr/branded";
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const payload = await verifyToken<{ kind?: string }>(req.cookies.get(ADMIN_COOKIE)?.value);
@@ -28,6 +29,27 @@ export async function GET(
 
   const format = req.nextUrl.searchParams.get("format") === "png" ? "png" : "svg";
   const filename = `aries-tap-${row.code}.${format}`;
+
+  // Branded artwork: the venue's colour, and the table number set into the
+  // centre. Purely visual — the encoded payload is the permanent resolver URL
+  // either way, so a tent reprinted with a different table label still points
+  // at the same record.
+  const label = (req.nextUrl.searchParams.get("label") ?? "").trim().slice(0, 4);
+  const dark = req.nextUrl.searchParams.get("dark") ?? undefined;
+  if (label || dark) {
+    const svg = await brandedQrSvg({
+      url: permanentUrlFor(row.code),
+      label,
+      dark,
+    });
+    return new NextResponse(svg, {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
   if (format === "png") {
     const buf = await qrPngForCode(row.code);

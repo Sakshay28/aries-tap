@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { TableField } from "@/components/table/TableField";
 import { Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PhotoUpload, type Photo } from "./PhotoUpload";
@@ -17,6 +18,9 @@ export type FeedbackFormData = {
   phone: string;
   email: string;
   contactRequested: boolean;
+  // Where this happened. The single most actionable field on the form for a
+  // manager who wants to fix it before the guest leaves the building.
+  table: string;
 };
 
 // Small, cheap positivity sniff for Smart Review Recovery — enough to notice a
@@ -55,6 +59,7 @@ export function PrivateFeedback({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [table, setTable] = useState("");
   const started = useRef(false);
   const recoveryFired = useRef(false);
 
@@ -88,6 +93,7 @@ export function PrivateFeedback({
       phone: phone.trim(),
       email: email.trim(),
       contactRequested,
+      table,
     });
   }
 
@@ -144,6 +150,10 @@ export function PrivateFeedback({
           <PhotoUpload photos={photos} onChange={setPhotos} max={maxImages} disabled={submitting} />
         </div>
       )}
+
+      <div className="mt-6">
+        <TableField value={table} onChange={setTable} tone="light" />
+      </div>
 
       <label className="mt-6 flex cursor-pointer items-start gap-3">
         <input

@@ -15,9 +15,9 @@ async function requireAdmin(req: NextRequest): Promise<boolean> {
 }
 
 function toCsv(rows: Awaited<ReturnType<typeof listLeads>>): string {
-  const header = ["phone", "venue", "consent", "consent_version", "created_at"];
+  const header = ["phone", "table", "venue", "consent", "consent_version", "created_at"];
   const lines = rows.map((r) =>
-    [r.phone, r.venue, r.consent, r.consentVersion, r.createdAt]
+    [r.phone, r.table, r.venue, r.consent, r.consentVersion, r.createdAt]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(",")
   );
@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
     leads: rows.map((r) => ({
       id: r.id,
       phone: prettyPhone(r.phone),
+      table: r.table,
       venue: r.venue,
       createdAt: r.createdAt,
     })),

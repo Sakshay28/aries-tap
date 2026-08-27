@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Loader2, Lock, Download, Users, CalendarDays, Star, Gamepad2, Activity } from "lucide-react";
 import { business } from "@/lib/content";
 
-type Lead = { id: string; phone: string; venue: string; createdAt: string };
+type Lead = { id: string; phone: string; table: string; venue: string; createdAt: string };
 type Data = { stats: { total: number; today: number }; leads: Lead[] };
 
 function fmtTime(iso: string) {
@@ -166,8 +166,15 @@ export function AdminClient() {
                 className="flex items-center justify-between px-5 py-3.5"
                 style={i > 0 ? { borderTop: "1px solid var(--line)" } : undefined}
               >
-                <span className="text-[15px] font-medium tabular-nums">
-                  {lead.phone}
+                <span className="flex items-center gap-2">
+                  <span className="text-[15px] font-medium tabular-nums">
+                    {lead.phone}
+                  </span>
+                  {lead.table && (
+                    <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                      Table {lead.table}
+                    </span>
+                  )}
                 </span>
                 <span className="text-[12px] text-ink-dim">{fmtTime(lead.createdAt)}</span>
               </li>
