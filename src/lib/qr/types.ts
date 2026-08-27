@@ -4,6 +4,8 @@ export type QrCodeRow = {
   code: string;
   destinationUrl: string;
   label: string;
+  /** The table this tag sits on, e.g. "12". Drives silent attribution. */
+  table: string;
   isActive: boolean;
   scanCount: number;
   archivedAt: string | null;

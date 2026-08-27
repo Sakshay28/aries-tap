@@ -202,9 +202,7 @@ export function ReviewExperience({ settings }: { settings: Settings }) {
       phone: data.phone,
       email: data.email,
       contactRequested: data.contactRequested,
-      // What the guest typed wins over the deep-link default: they know which
-      // table they're sitting at, the URL only guessed.
-      table: data.table || table.current,
+      table: table.current,
       timeMs: Date.now() - openedAt.current,
     });
     setSubmitting(false);

@@ -6,6 +6,7 @@ import { verifyToken } from "@/lib/wifi/session";
 import { ADMIN_COOKIE, QR_BASE_IS_LOCAL, QR_BASE_URL, permanentUrlFor } from "@/lib/qr/config";
 import { DuplicateCodeError, createQrCode, listQrCodes } from "@/lib/qr/db";
 import { normalizeQrCode, sanitizeLabel, validateDestinationUrl } from "@/lib/qr/validation";
+import { normalizeTable } from "@/lib/table/session";
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const payload = await verifyToken<{ kind?: string }>(req.cookies.get(ADMIN_COOKIE)?.value);
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  let body: { code?: unknown; destinationUrl?: unknown; label?: unknown };
+  let body: { code?: unknown; destinationUrl?: unknown; label?: unknown; table?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
       code,
       destinationUrl: dest.url,
       label: sanitizeLabel(body.label),
+      table: normalizeTable(body.table),
     });
     return NextResponse.json(
       { code: { ...row, permanentUrl: permanentUrlFor(row.code) } },

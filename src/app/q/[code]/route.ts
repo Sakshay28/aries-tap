@@ -15,7 +15,7 @@
 import { NextResponse, after, type NextRequest } from "next/server";
 import { clientIp } from "@/lib/wifi/request";
 import { store } from "@/lib/wifi/store";
-import { SCAN_IP_RULE } from "@/lib/qr/config";
+import { QR_BASE_URL, SCAN_IP_RULE } from "@/lib/qr/config";
 import { getQrByCode, recordScan } from "@/lib/qr/db";
 import { printedCode } from "@/lib/qr/registry";
 import { inactiveResponse, notFoundResponse } from "@/lib/qr/statusPage";
@@ -23,6 +23,7 @@ import { normalizeQrCode, validateDestinationUrl } from "@/lib/qr/validation";
 import { ingestEvent } from "@/lib/events/ingest";
 import { tagStatus } from "@/lib/events/tags";
 import { ANON_COOKIE, newAnonId, setAnonCookie } from "@/lib/events/session";
+import { setTableCookie } from "@/lib/table/session";
 
 export const dynamic = "force-dynamic";
 
@@ -137,7 +138,27 @@ export async function GET(
   // takes a numeric-shorthand branch that only sets Location, silently dropping
   // any headers — which would let a stale destination stick in caches after the
   // venue changes it, defeating the entire feature.
-  const res = NextResponse.redirect(check.url, {
+  // The tag knows which table it is glued to, so the guest never has to. The
+  // table rides the visit as a cookie (surviving every later navigation the
+  // guest makes) and, for same-origin destinations, as a `?t=` hint so the
+  // landing page has it before the first paint.
+  let target = check.url;
+  if (qr.table) {
+    try {
+      const u = new URL(check.url);
+      const base = new URL(QR_BASE_URL);
+      // Only ever decorate our own URLs. Appending a parameter to a third-party
+      // link leaks venue data to them and can break signed or exact-match URLs.
+      if (u.host === base.host && !u.searchParams.has("t")) {
+        u.searchParams.set("t", qr.table);
+        target = u.toString();
+      }
+    } catch {
+      /* keep the validated destination exactly as stored */
+    }
+  }
+
+  const res = NextResponse.redirect(target, {
     status: 302,
     headers: {
       "Cache-Control": "no-store, must-revalidate",
@@ -145,5 +166,6 @@ export async function GET(
     },
   });
   setAnonCookie(res, anonId);
+  setTableCookie(res, qr.table);
   return res;
 }

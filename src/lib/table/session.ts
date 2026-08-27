@@ -1,72 +1,65 @@
-// Which table is this guest sitting at?
+// Which table a guest is sitting at — established silently, never asked.
 //
-// With one universal QR across the whole venue, the printed code cannot say
-// where the guest is — every tent carries the same URL. So the guest tells us
-// once, and we remember it for the rest of the visit.
+// The table is carried by the QR itself: every tent has its own code, so
+// scanning ariestap.in/q/T12 IS the guest telling us they're at table 12. The
+// resolver stamps that onto the visit as a cookie, and every flow the guest
+// touches afterwards — WiFi, review, complaint — reads it server-side.
 //
-// "Once" is the important part. A manager wants table numbers on complaints and
-// WiFi sign-ups, but a guest asked their table number three times in one visit
-// simply stops answering. The answer is cached for VISIT_TTL_MS and shared by
-// every flow, so a guest who joins the WiFi and later leaves a review is asked
-// exactly one time.
+// Cookie rather than a URL parameter, because a URL parameter survives exactly
+// one navigation. A guest scans at the table, taps through to the WiFi page,
+// joins, wanders to the review flow twenty minutes later; only a cookie is
+// still there at the end of that journey. The `?t=` parameter is still set on
+// the redirect as a same-page hint, but the cookie is what actually holds.
 //
-// A `?t=5A` deep link still wins when present (per-table codes, table-specific
-// links) — this is the fallback for when the URL cannot tell us.
+// Server-trusted: it is written only by the resolver, from a database row it
+// just looked up. A client can forge the cookie, but the blast radius is a
+// guest mislabelling their own table on their own complaint — worth far less
+// than the friction of asking 40 tables' worth of guests a question.
 
-const KEY = "aries_table";
+import type { NextResponse } from "next/server";
 
-// Long enough to cover a meal, short enough that tomorrow's guest at the same
-// device isn't silently filed under yesterday's table.
-const VISIT_TTL_MS = 4 * 60 * 60 * 1000;
+export const TABLE_COOKIE = "aries_table";
 
-type Stored = { value: string; at: number };
+// A visit, not a session: long enough to cover a long meal, short enough that
+// tomorrow's guest on the same phone isn't filed under tonight's table.
+export const TABLE_TTL_SECONDS = 4 * 60 * 60;
 
-/** Trim to what a table label can legitimately be. Mirrors the server rule. */
-export function normalizeTable(raw: string): string {
-  return raw
+/** The one normalization rule, shared by every reader and writer. */
+export function normalizeTable(raw: unknown): string {
+  return String(raw ?? "")
     .replace(/[^A-Za-z0-9 \-_.]/g, "")
     .trim()
     .slice(0, 12)
     .toUpperCase();
 }
 
-/** The table from the URL, if the link carried one. Highest priority. */
-export function tableFromUrl(): string {
-  if (typeof window === "undefined") return "";
+/** Stamp the visit with the table the scanned tag belongs to. */
+export function setTableCookie(res: NextResponse, table: string): void {
+  const v = normalizeTable(table);
+  if (!v) return;
+  res.cookies.set(TABLE_COOKIE, v, {
+    // Readable by client code too — the review beacon attaches it to funnel
+    // events without a server round-trip. It is a table number, not a secret.
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: TABLE_TTL_SECONDS,
+  });
+}
+
+/** Read the visit's table from a request's cookies (server-side). */
+export function tableFromRequest(req: { cookies: { get(n: string): { value: string } | undefined } }): string {
+  return normalizeTable(req.cookies.get(TABLE_COOKIE)?.value);
+}
+
+/** Read the visit's table in the browser. Empty when the guest never scanned. */
+export function clientTable(): string {
+  if (typeof document === "undefined") return "";
   try {
-    const p = new URLSearchParams(window.location.search);
-    return normalizeTable(p.get("t") || p.get("table") || p.get("seat") || "");
+    const m = document.cookie.match(/(?:^|;\s*)aries_table=([^;]*)/);
+    return m ? normalizeTable(decodeURIComponent(m[1])) : "";
   } catch {
     return "";
   }
-}
-
-/** The remembered answer for this visit, if it hasn't gone stale. */
-export function storedTable(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return "";
-    const s = JSON.parse(raw) as Stored;
-    if (!s?.value || typeof s.at !== "number") return "";
-    if (Date.now() - s.at > VISIT_TTL_MS) return "";
-    return normalizeTable(s.value);
-  } catch {
-    return "";
-  }
-}
-
-export function rememberTable(value: string): void {
-  const v = normalizeTable(value);
-  if (!v || typeof window === "undefined") return;
-  try {
-    localStorage.setItem(KEY, JSON.stringify({ value: v, at: Date.now() } satisfies Stored));
-  } catch {
-    /* private mode — the guest just gets asked again next flow */
-  }
-}
-
-/** URL first, then this visit's remembered answer. Empty = we must ask. */
-export function currentTable(): string {
-  return tableFromUrl() || storedTable();
 }

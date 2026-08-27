@@ -6,7 +6,7 @@
 // Plus the table/seat from the NFC/QR deep link (?t=12), so a complaint can be
 // pinned to exactly where it happened without asking the guest anything.
 
-import { storedTable } from "@/lib/table/session";
+import { clientTable } from "@/lib/table/session";
 
 const DEVICE_KEY = "aries_review_device";
 
@@ -48,9 +48,9 @@ export function getTable(): string {
     const p = new URLSearchParams(window.location.search);
     const raw = p.get("t") || p.get("table") || p.get("seat") || "";
     const fromUrl = raw.replace(/[^A-Za-z0-9 \-_.]/g, "").slice(0, 24);
-    // Fall back to whatever the guest already told another flow this visit —
-    // one universal QR means the URL usually can't say where they're sitting.
-    return fromUrl || storedTable();
+    // Otherwise the table stamped on this visit when the guest scanned their
+    // tent's tag. The guest is never asked; the tag already said which table.
+    return fromUrl || clientTable();
   } catch {
     return "";
   }

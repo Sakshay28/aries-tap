@@ -6,12 +6,13 @@ import { insertLead } from "@/lib/wifi/db";
 import { signToken, sha256Hex } from "@/lib/wifi/session";
 import { clientIp } from "@/lib/wifi/request";
 import { VERIFY_COOKIE, VERIFY_TTL_SECONDS, CONSENT_VERSION } from "@/lib/wifi/config";
+import { normalizeTable } from "@/lib/table/session";
 
 // Verify the code. On success we record the lead (the whole point) and set a
 // short-lived signed cookie that unlocks the credentials endpoint.
 
 export async function POST(req: Request) {
-  let body: { phone?: string; code?: string; consent?: boolean; table?: string };
+  let body: { phone?: string; code?: string; consent?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -39,14 +40,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message, reason: result.reason }, { status });
   }
 
-  // The guest's own answer to "which table are you at?". Optional and
-  // re-sanitized here — the client already normalized it, but a client is not a
-  // validator. Bounded so a lead row can never carry a payload.
-  const table = String(body.table ?? "")
-    .replace(/[^A-Za-z0-9 \-_.]/g, "")
-    .trim()
-    .slice(0, 12)
-    .toUpperCase();
+  // Which table this guest is at — taken from the visit cookie the QR resolver
+  // stamped when they scanned their tent, never from the request body. The
+  // guest is never asked and never sees this happen.
+  const table = normalizeTable(
+    /(?:^|;\s*)aries_table=([^;]*)/.exec(req.headers.get("cookie") ?? "")?.[1] ?? "",
+  );
 
   // Verified — persist the lead. IP is hashed (we keep the number, not the IP).
   await insertLead({

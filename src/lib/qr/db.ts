@@ -52,12 +52,16 @@ async function sql() {
         code            text NOT NULL,
         destination_url text NOT NULL,
         label           text NOT NULL DEFAULT '',
+        table_no        text NOT NULL DEFAULT '',
         is_active       boolean NOT NULL DEFAULT true,
         scan_count      bigint NOT NULL DEFAULT 0,
         archived_at     timestamptz,
         created_at      timestamptz NOT NULL DEFAULT now(),
         updated_at      timestamptz NOT NULL DEFAULT now()
       )`;
+    // Tags created before per-table attribution shipped predate this column,
+    // and CREATE TABLE IF NOT EXISTS will never add it to them.
+    await q`ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS table_no text NOT NULL DEFAULT ''`;
     await q`CREATE UNIQUE INDEX IF NOT EXISTS qr_codes_code_key ON qr_codes (code)`;
     await q`CREATE INDEX IF NOT EXISTS qr_codes_tenant_idx ON qr_codes (tenant_id, created_at DESC)`;
     await q`
@@ -135,6 +139,7 @@ function mapCode(r: Record<string, unknown>): QrCodeRow {
     code: String(r.code),
     destinationUrl: String(r.destination_url),
     label: String(r.label ?? ""),
+    table: String(r.table_no ?? ""),
     isActive: Boolean(r.is_active),
     scanCount: Number(r.scan_count ?? 0),
     archivedAt: r.archived_at ? new Date(r.archived_at as string).toISOString() : null,
@@ -211,14 +216,15 @@ export async function createQrCode(input: {
   code: string;
   destinationUrl: string;
   label?: string;
+  table?: string;
 }): Promise<QrCodeRow> {
   if (usingRealDb) {
     const q = await sql();
     let rows: Record<string, unknown>[];
     try {
       rows = (await q`
-        INSERT INTO qr_codes (tenant_id, code, destination_url, label)
-        VALUES (${TENANT_ID}, ${input.code}, ${input.destinationUrl}, ${input.label ?? ""})
+        INSERT INTO qr_codes (tenant_id, code, destination_url, label, table_no)
+        VALUES (${TENANT_ID}, ${input.code}, ${input.destinationUrl}, ${input.label ?? ""}, ${input.table ?? ""})
         RETURNING *`) as Record<string, unknown>[];
     } catch (err) {
       if (isUniqueViolation(err)) throw new DuplicateCodeError(input.code);
@@ -239,6 +245,7 @@ export async function createQrCode(input: {
       code: input.code,
       destinationUrl: input.destinationUrl,
       label: input.label ?? "",
+      table: input.table ?? "",
       isActive: true,
       scanCount: 0,
       archivedAt: null,
