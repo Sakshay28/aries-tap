@@ -7,6 +7,7 @@ import { signToken, sha256Hex } from "@/lib/wifi/session";
 import { clientIp } from "@/lib/wifi/request";
 import { VERIFY_COOKIE, VERIFY_TTL_SECONDS, CONSENT_VERSION } from "@/lib/wifi/config";
 import { normalizeTable } from "@/lib/table/session";
+import { DEPLOYMENT_TENANT_ID } from "@/lib/events/tenant";
 
 // Verify the code. On success we record the lead (the whole point) and set a
 // short-lived signed cookie that unlocks the credentials endpoint.
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
   // Verified — persist the lead. IP is hashed (we keep the number, not the IP).
   await insertLead({
     phone,
+    tenantId: DEPLOYMENT_TENANT_ID,
     venue: business.name,
     table,
     consent: true,

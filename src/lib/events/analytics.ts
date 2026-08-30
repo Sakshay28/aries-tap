@@ -123,7 +123,9 @@ function topTags(events: TapEvent[], tags: TagInfo[], dayStart: number): TagStat
   }
   return [...stat.values()]
     .sort((a, b) => b.taps - a.taps || (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""))
-    .slice(0, 8);
+    // Every table, not just a leaderboard — the simple dashboard's Taps card
+    // breaks the total down per table, so all of a venue's tags must be present.
+    .slice(0, 500);
 }
 
 export function computeOverview(

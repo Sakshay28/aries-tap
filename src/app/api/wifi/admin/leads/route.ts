@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listLeads, leadStats } from "@/lib/wifi/db";
-import { verifyToken } from "@/lib/wifi/session";
 import { prettyPhone } from "@/lib/wifi/phone";
-import { ADMIN_COOKIE } from "@/lib/wifi/config";
+import { resolveOwnerTenant } from "@/lib/events/tenant";
 
-// Leads for the admin dashboard. Behind the admin session cookie. `?format=csv`
-// streams a download; otherwise JSON for the dashboard.
-
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const payload = await verifyToken<{ kind?: string }>(
-    req.cookies.get(ADMIN_COOKIE)?.value
-  );
-  return payload?.kind === "admin";
-}
+// Leads for the admin dashboard. Behind the admin session cookie, scoped to the
+// owner's own venue. `?format=csv` streams a download; otherwise JSON.
 
 function toCsv(rows: Awaited<ReturnType<typeof listLeads>>): string {
   const header = ["phone", "table", "venue", "consent", "consent_version", "created_at"];
@@ -25,11 +17,12 @@ function toCsv(rows: Awaited<ReturnType<typeof listLeads>>): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const tenantId = await resolveOwnerTenant(req);
+  if (!tenantId) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const rows = await listLeads(1000);
+  const rows = await listLeads(tenantId, 1000);
 
   if (req.nextUrl.searchParams.get("format") === "csv") {
     return new NextResponse(toCsv(rows), {
@@ -42,7 +35,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const stats = await leadStats();
+  const stats = await leadStats(tenantId);
   return NextResponse.json({
     stats,
     leads: rows.map((r) => ({

@@ -441,7 +441,9 @@ export async function overviewMetrics(tenantId: string, tags: TagInfo[]): Promis
       };
     })
     .sort((a, b) => b.taps - a.taps || (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""))
-    .slice(0, 8);
+    // Every table, not just a leaderboard — the simple dashboard's Taps card
+    // breaks the total down per table, so all of a venue's tags must be present.
+    .slice(0, 500);
 
   return {
     totalTaps: Number(s.total_taps ?? 0),

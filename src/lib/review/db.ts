@@ -272,16 +272,24 @@ export async function updateFeedbackStatus(opts: {
   }
 }
 
-export async function listFeedback(limit = 500): Promise<FeedbackRow[]> {
+// Feedback for one venue. `tenantId` defaults to this deployment's own tenant,
+// so single-venue callers are unchanged; the owner dashboard passes each venue's
+// id to read across a shared multi-venue database (and the local JSON store).
+export async function listFeedback(
+  tenantId: string = TENANT_ID,
+  limit = 500
+): Promise<FeedbackRow[]> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
       SELECT * FROM review_feedback
-      WHERE tenant_id = ${TENANT_ID}
+      WHERE tenant_id = ${tenantId}
       ORDER BY created_at DESC LIMIT ${limit}`) as Record<string, unknown>[];
     return rows.map(mapFeedback);
   }
-  return (await readJson<FeedbackRow>(FEEDBACK_FILE)).slice(0, limit);
+  return (await readJson<FeedbackRow>(FEEDBACK_FILE))
+    .filter((r) => r.tenantId === tenantId)
+    .slice(0, limit);
 }
 
 // ————————————————————————————————— public API: events
@@ -328,16 +336,21 @@ export async function insertEvent(e: NewEvent): Promise<void> {
   }
 }
 
-export async function listEvents(limit = 5000): Promise<EventRow[]> {
+export async function listEvents(
+  tenantId: string = TENANT_ID,
+  limit = 5000
+): Promise<EventRow[]> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
       SELECT id, tenant_id, session_id, name, rating, meta, device, browser, os,
              country, city, created_at
       FROM review_events
-      WHERE tenant_id = ${TENANT_ID}
+      WHERE tenant_id = ${tenantId}
       ORDER BY created_at DESC LIMIT ${limit}`) as Record<string, unknown>[];
     return rows.map(mapEvent);
   }
-  return (await readJson<EventRow>(EVENTS_FILE)).slice(0, limit);
+  return (await readJson<EventRow>(EVENTS_FILE))
+    .filter((r) => r.tenantId === tenantId)
+    .slice(0, limit);
 }

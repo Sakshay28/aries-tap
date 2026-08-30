@@ -5,11 +5,19 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { business } from "@/lib/content";
+
+// The tenant a lead belongs to. In a single-venue deployment this is the one
+// venue; on a shared multi-venue database it is what keeps each venue's numbers
+// its own (and what the owner dashboard scopes by). Legacy rows written before
+// this column existed default to the deployment's own tenant on read.
+const DEFAULT_TENANT = process.env.ARIES_TENANT_ID || business.id;
 
 export type Lead = {
   phone: string; // E.164
+  tenantId: string; // owning venue, e.g. "taffeta"
   venue: string;
-  table: string; // guest-supplied seat/table, "" when they skipped it
+  table: string; // from the resolver's visit cookie, "" when they never scanned
   consent: boolean;
   consentVersion: string;
   ipHash: string;
@@ -46,6 +54,10 @@ async function sql() {
     // exists — so an explicit, idempotent ALTER is what actually migrates the
     // venues already running.
     await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS table_no text NOT NULL DEFAULT ''`;
+    // Tenant scoping for the shared multi-venue database. Existing rows get the
+    // deployment's own tenant so a single-venue venue's history stays intact.
+    await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT ${DEFAULT_TENANT}`;
+    await q`CREATE INDEX IF NOT EXISTS wifi_leads_tenant_idx ON wifi_leads (tenant_id, created_at DESC)`;
     ensured = true;
   }
   return q;
@@ -81,8 +93,8 @@ export async function insertLead(lead: Lead): Promise<void> {
   if (usingRealDb) {
     const q = await sql();
     await q`
-      INSERT INTO wifi_leads (phone, venue, consent, consent_version, ip_hash, user_agent, table_no)
-      VALUES (${lead.phone}, ${lead.venue}, ${lead.consent}, ${lead.consentVersion}, ${lead.ipHash}, ${lead.userAgent}, ${lead.table})`;
+      INSERT INTO wifi_leads (phone, venue, consent, consent_version, ip_hash, user_agent, table_no, tenant_id)
+      VALUES (${lead.phone}, ${lead.venue}, ${lead.consent}, ${lead.consentVersion}, ${lead.ipHash}, ${lead.userAgent}, ${lead.table}, ${lead.tenantId})`;
     return;
   }
   // Best-effort in fallback mode: never fail a guest's WiFi because the
@@ -100,18 +112,26 @@ export async function insertLead(lead: Lead): Promise<void> {
   }
 }
 
-export async function listLeads(limit = 500): Promise<LeadRow[]> {
+// Leads for one venue. `tenantId` scopes the read on the shared database (and
+// filters the local JSON store the same way); omit it only for a single-venue
+// tool that legitimately wants every row.
+export async function listLeads(tenantId?: string, limit = 500): Promise<LeadRow[]> {
   if (usingRealDb) {
     const q = await sql();
-    const rows = (await q`
-      SELECT id, phone, venue, consent, consent_version, ip_hash, user_agent, table_no, created_at
-      FROM wifi_leads ORDER BY created_at DESC LIMIT ${limit}`) as Record<
-      string,
-      unknown
-    >[];
+    const rows = (
+      tenantId
+        ? await q`
+            SELECT id, phone, venue, consent, consent_version, ip_hash, user_agent, table_no, tenant_id, created_at
+            FROM wifi_leads WHERE tenant_id = ${tenantId}
+            ORDER BY created_at DESC LIMIT ${limit}`
+        : await q`
+            SELECT id, phone, venue, consent, consent_version, ip_hash, user_agent, table_no, tenant_id, created_at
+            FROM wifi_leads ORDER BY created_at DESC LIMIT ${limit}`
+    ) as Record<string, unknown>[];
     return rows.map((r) => ({
       id: String(r.id),
       phone: String(r.phone),
+      tenantId: String(r.tenant_id ?? DEFAULT_TENANT),
       venue: String(r.venue),
       table: String(r.table_no ?? ""),
       consent: Boolean(r.consent),
@@ -121,25 +141,37 @@ export async function listLeads(limit = 500): Promise<LeadRow[]> {
       createdAt: new Date(r.created_at as string).toISOString(),
     }));
   }
-  // Rows written before table capture existed have no `table` at all. Default
-  // it here so every consumer can treat the field as present.
-  return (await readJson())
-    .slice(0, limit)
-    .map((r) => ({ ...r, table: r.table ?? "" }));
+  // Rows written before these columns existed have no `table`/`tenantId`.
+  // Default them here so every consumer can treat the fields as present, then
+  // scope to the requested venue.
+  const all = (await readJson()).map((r) => ({
+    ...r,
+    table: r.table ?? "",
+    tenantId: r.tenantId ?? DEFAULT_TENANT,
+  }));
+  return (tenantId ? all.filter((r) => r.tenantId === tenantId) : all).slice(0, limit);
 }
 
-export async function leadStats(): Promise<{ total: number; today: number }> {
+export async function leadStats(tenantId?: string): Promise<{ total: number; today: number }> {
   if (usingRealDb) {
     const q = await sql();
-    const [{ total }] = (await q`SELECT count(*)::int AS total FROM wifi_leads`) as {
-      total: number;
-    }[];
-    const [{ today }] = (await q`
-      SELECT count(*)::int AS today FROM wifi_leads
-      WHERE created_at >= date_trunc('day', now())`) as { today: number }[];
+    const [{ total }] = (
+      tenantId
+        ? await q`SELECT count(*)::int AS total FROM wifi_leads WHERE tenant_id = ${tenantId}`
+        : await q`SELECT count(*)::int AS total FROM wifi_leads`
+    ) as { total: number }[];
+    const [{ today }] = (
+      tenantId
+        ? await q`SELECT count(*)::int AS today FROM wifi_leads
+            WHERE tenant_id = ${tenantId} AND created_at >= date_trunc('day', now())`
+        : await q`SELECT count(*)::int AS today FROM wifi_leads
+            WHERE created_at >= date_trunc('day', now())`
+    ) as { today: number }[];
     return { total, today };
   }
-  const rows = await readJson();
+  const rows = tenantId
+    ? (await readJson()).filter((r) => (r.tenantId ?? DEFAULT_TENANT) === tenantId)
+    : await readJson();
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const today = rows.filter((r) => new Date(r.createdAt) >= start).length;

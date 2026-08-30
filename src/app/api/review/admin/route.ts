@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/wifi/session";
-import { ADMIN_COOKIE } from "@/lib/review/config";
+import { ADMIN_COOKIE, TENANT_ID } from "@/lib/review/config";
 import { computeAnalytics } from "@/lib/review/analytics";
 import { listEvents, listFeedback, updateFeedbackStatus } from "@/lib/review/db";
 import { REVIEW_STATUSES, type ReviewStatus } from "@/lib/review/types";
@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
   }
 
   const [feedback, events] = await Promise.all([
-    listFeedback(1000),
-    listEvents(8000),
+    listFeedback(TENANT_ID, 1000),
+    listEvents(TENANT_ID, 8000),
   ]);
   const analytics = computeAnalytics(events, feedback);
 

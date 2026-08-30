@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { store } from "@/lib/wifi/store";
 import { clientIp } from "@/lib/wifi/request";
 import {
@@ -12,10 +12,55 @@ import {
 } from "@/lib/chat/config";
 import { buildSystemPrompt } from "@/lib/chat/prompt";
 import { fallbackReply } from "@/lib/chat/fallback";
+import { insertChatTurn } from "@/lib/chat/db";
+import { DEPLOYMENT_TENANT_ID } from "@/lib/events/tenant";
+import { normalizeTable } from "@/lib/table/session";
 
 export const dynamic = "force-dynamic";
 
 type Msg = { role: "user" | "assistant"; content: string };
+
+// The table the guest scanned from, read from the `aries_table` visit cookie the
+// QR/NFC resolver stamped. "" when they reached the chat without scanning a tag.
+function tableFromCookieHeader(cookie: string | null): string {
+  const raw = /(?:^|;\s*)aries_table=([^;]*)/.exec(cookie ?? "")?.[1] ?? "";
+  try {
+    return normalizeTable(decodeURIComponent(raw));
+  } catch {
+    return normalizeTable(raw);
+  }
+}
+
+// Tee the outgoing answer stream so we keep a full copy, then — once the
+// response has finished streaming to the guest — persist the completed turn for
+// the owner's "AI Chat" history. `after` keeps the serverless function alive
+// past the response so the write actually lands; logging never blocks or breaks
+// the reply (insertChatTurn swallows its own errors).
+function withTurnLogging(
+  res: Response,
+  meta: { tenantId: string; table: string; question: string }
+): Response {
+  if (!res.body) return res;
+  const captured = { answer: "" };
+  const decoder = new TextDecoder();
+  const tee = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      captured.answer += decoder.decode(chunk, { stream: true });
+      controller.enqueue(chunk);
+    },
+    flush() {
+      captured.answer += decoder.decode();
+    },
+  });
+  after(async () => {
+    const answer = captured.answer.trim();
+    if (answer) await insertChatTurn({ ...meta, answer });
+  });
+  return new Response(res.body.pipeThrough(tee), {
+    status: res.status,
+    headers: res.headers,
+  });
+}
 
 // Rate-limit a chat turn by IP across a short and a long window.
 async function limited(ip: string): Promise<boolean> {
@@ -60,15 +105,17 @@ export async function POST(req: Request) {
   }
 
   const system = buildSystemPrompt(new Date());
+  const table = tableFromCookieHeader(req.headers.get("cookie"));
+  const logMeta = { tenantId: DEPLOYMENT_TENANT_ID, table, question: lastUser };
 
   // No key (or later, on error) → deterministic host. Never a dead endpoint.
-  if (!usingGemini) return textStream(fallbackReply(lastUser));
+  if (!usingGemini) return withTurnLogging(textStream(fallbackReply(lastUser)), logMeta);
 
   try {
-    return await streamFromGemini(system, messages);
+    return withTurnLogging(await streamFromGemini(system, messages), logMeta);
   } catch (err) {
     console.error("[chat] Gemini failed, using fallback", err);
-    return textStream(fallbackReply(lastUser));
+    return withTurnLogging(textStream(fallbackReply(lastUser)), logMeta);
   }
 }
 

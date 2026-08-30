@@ -182,7 +182,7 @@ test("§28: concurrent activity across 60 tags — real store — stays tenant-i
   const ovA = await overviewMetrics(A, tagInfo(reg, A));
   assert.equal(ovA.totalTaps, perTenant);
   assert.equal(ovA.activeTags, 20);
-  assert.equal(ovA.topTags.length, 8); // top slice
+  assert.equal(ovA.topTags.length, 20); // every tag, not a leaderboard — the dashboard breaks taps down per table
   assert.equal(ovA.topTags.every((t) => t.taps === TAPS), true); // every tag tapped 3×
 
   a1.close(); a2.close(); b1.close(); c1.close();
