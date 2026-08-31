@@ -78,3 +78,24 @@ jobs:
         # The suite asserts it selected the Postgres track (fails, never silently
         # falls back to JSON) and runs every acceptance test against real SQL.
         run: node --experimental-strip-types --import ./tests/register-hooks.mjs --test tests/acceptance.test.ts
+
+  ably-live:
+    name: Live Ably fan-out (opt-in)
+    # The one thing the mocked adapter test can't prove — a real publish fanning
+    # out across two independent Ably connections (docs/PRODUCTION-VERIFICATION.md
+    # §B). Opt-in and inert by default: it runs only when the repository variable
+    # RUN_ABLY_LIVE=true is set, so forks and PRs without the ABLY_API_KEY secret
+    # never fail here. Locally: `ABLY_API_KEY=… npm run test:ably`.
+    if: ${{ vars.RUN_ABLY_LIVE == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Cross-connection fan-out against real Ably
+        env:
+          ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+        run: npm run test:ably

@@ -5,26 +5,22 @@
 // venue has re-pointed it.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyToken } from "@/lib/wifi/session";
-import { ADMIN_COOKIE, permanentUrlFor } from "@/lib/qr/config";
+import { permanentUrlFor } from "@/lib/qr/config";
 import { getQrById } from "@/lib/qr/db";
+import { resolveOwnerTenant } from "@/lib/events/tenant";
 import { qrPngForCode, qrSvgForCode } from "@/lib/qr/generate";
 import { brandedQrSvg } from "@/lib/qr/branded";
-
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const payload = await verifyToken<{ kind?: string }>(req.cookies.get(ADMIN_COOKIE)?.value);
-  return payload?.kind === "admin";
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   const { id } = await params;
-  const row = await getQrById(id);
+  const row = await getQrById(tenant, id);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const format = req.nextUrl.searchParams.get("format") === "png" ? "png" : "svg";

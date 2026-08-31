@@ -54,9 +54,13 @@ async function sql() {
     // exists — so an explicit, idempotent ALTER is what actually migrates the
     // venues already running.
     await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS table_no text NOT NULL DEFAULT ''`;
-    // Tenant scoping for the shared multi-venue database. Existing rows get the
-    // deployment's own tenant so a single-venue venue's history stays intact.
-    await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT ${DEFAULT_TENANT}`;
+    // Tenant scoping for the shared multi-venue database. Postgres forbids a
+    // bound parameter in a DDL DEFAULT, so the column defaults to '' (a literal),
+    // and a separate UPDATE — where a parameter IS allowed — backfills existing
+    // rows to this deployment's own tenant. Idempotent: after the first run it
+    // matches no rows (new inserts set tenant_id explicitly).
+    await q`ALTER TABLE wifi_leads ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT ''`;
+    await q`UPDATE wifi_leads SET tenant_id = ${DEFAULT_TENANT} WHERE tenant_id = ''`;
     await q`CREATE INDEX IF NOT EXISTS wifi_leads_tenant_idx ON wifi_leads (tenant_id, created_at DESC)`;
     ensured = true;
   }

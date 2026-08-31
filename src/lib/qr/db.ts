@@ -14,10 +14,17 @@
 // this codebase means guest-facing funnel telemetry, and this is the opposite —
 // low-volume, admin-attributed mutation history.
 
+// Every admin function takes an explicit `tenantId` — the same posture as
+// events/db.ts. The caller resolves it authoritatively from the signed admin
+// session (see resolveOwnerTenant); this layer never reaches for a build-time
+// constant, so one running process and one table can serve many venues and a
+// query is physically incapable of returning another tenant's rows. The
+// resolver's guest hot path is deliberately tenant-agnostic (getQrByCodeGlobal),
+// because a globally-unique printed code is owned by exactly one venue.
+
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { TENANT_ID } from "./config";
 import type {
   QrAuditAction,
   QrAuditRow,
@@ -163,7 +170,7 @@ function mapAudit(r: Record<string, unknown>): QrAuditRow {
 
 // —————————————————————————————— audit
 
-async function logAudit(entry: {
+async function logAudit(tenantId: string, entry: {
   qrCodeId: string;
   action: QrAuditAction;
   fromValue?: string;
@@ -173,7 +180,7 @@ async function logAudit(entry: {
   const row: QrAuditRow = {
     id: crypto.randomUUID(),
     qrCodeId: entry.qrCodeId,
-    tenantId: TENANT_ID,
+    tenantId,
     action: entry.action,
     fromValue: entry.fromValue ?? "",
     toValue: entry.toValue ?? "",
@@ -195,24 +202,24 @@ async function logAudit(entry: {
   });
 }
 
-export async function listAudit(qrCodeId: string, limit = 100): Promise<QrAuditRow[]> {
+export async function listAudit(tenantId: string, qrCodeId: string, limit = 100): Promise<QrAuditRow[]> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
       SELECT * FROM qr_audit_log
-      WHERE qr_code_id = ${qrCodeId} AND tenant_id = ${TENANT_ID}
+      WHERE qr_code_id = ${qrCodeId} AND tenant_id = ${tenantId}
       ORDER BY created_at DESC LIMIT ${limit}`) as Record<string, unknown>[];
     return rows.map(mapAudit);
   }
   const rows = await readJson<QrAuditRow>(AUDIT_FILE);
   return rows
-    .filter((r) => r.qrCodeId === qrCodeId && r.tenantId === TENANT_ID)
+    .filter((r) => r.qrCodeId === qrCodeId && r.tenantId === tenantId)
     .slice(0, limit);
 }
 
 // —————————————————————————————— codes
 
-export async function createQrCode(input: {
+export async function createQrCode(tenantId: string, input: {
   code: string;
   destinationUrl: string;
   label?: string;
@@ -224,14 +231,14 @@ export async function createQrCode(input: {
     try {
       rows = (await q`
         INSERT INTO qr_codes (tenant_id, code, destination_url, label, table_no)
-        VALUES (${TENANT_ID}, ${input.code}, ${input.destinationUrl}, ${input.label ?? ""}, ${input.table ?? ""})
+        VALUES (${tenantId}, ${input.code}, ${input.destinationUrl}, ${input.label ?? ""}, ${input.table ?? ""})
         RETURNING *`) as Record<string, unknown>[];
     } catch (err) {
       if (isUniqueViolation(err)) throw new DuplicateCodeError(input.code);
       throw err;
     }
     const row = mapCode(rows[0]);
-    await logAudit({ qrCodeId: row.id, action: "created", toValue: row.destinationUrl });
+    await logAudit(tenantId, { qrCodeId: row.id, action: "created", toValue: row.destinationUrl });
     return row;
   }
 
@@ -241,7 +248,7 @@ export async function createQrCode(input: {
     const now = new Date().toISOString();
     const created: QrCodeRow = {
       id: crypto.randomUUID(),
-      tenantId: TENANT_ID,
+      tenantId,
       code: input.code,
       destinationUrl: input.destinationUrl,
       label: input.label ?? "",
@@ -256,32 +263,18 @@ export async function createQrCode(input: {
     await writeJson(CODES_FILE, rows);
     return created;
   });
-  await logAudit({ qrCodeId: row.id, action: "created", toValue: row.destinationUrl });
+  await logAudit(tenantId, { qrCodeId: row.id, action: "created", toValue: row.destinationUrl });
   return row;
 }
 
-// The resolver's hot path. Tenant-scoped even though `code` is globally
-// unique — matches the defensive pattern used by playwin's getClaim(), and
-// means nothing here changes if code uniqueness is ever loosened.
-export async function getQrByCode(code: string): Promise<QrCodeRow | null> {
-  if (usingRealDb) {
-    const q = await sql();
-    const rows = (await q`
-      SELECT * FROM qr_codes
-      WHERE code = ${code} AND tenant_id = ${TENANT_ID}
-      LIMIT 1`) as Record<string, unknown>[];
-    return rows[0] ? mapCode(rows[0]) : null;
-  }
-  const rows = await readJson<QrCodeRow>(CODES_FILE);
-  return rows.find((r) => r.code === code && r.tenantId === TENANT_ID) ?? null;
-}
-
 // Tenant-agnostic lookup by printed code — the authoritative "who owns this
-// tag?" question the multi-tenant write path asks. `code` is globally unique in
-// the registry, so this returns at most one row, and its `tenant_id` is the
-// event's rightful owner no matter who presents the code (spec §20–§21). Kept
-// distinct from getQrByCode (which is tenant-scoped for admin surfaces) so a
-// venue's dashboard can never enumerate another venue's codes through it.
+// tag?" question the resolver (guest hot path) and the multi-tenant write path
+// both ask. `code` is globally unique in the registry, so this returns at most
+// one row, and its `tenant_id` is the tag's rightful owner no matter who
+// presents the code (spec §20–§21). This is deliberately the ONLY by-code
+// lookup: a build-time-tenant-scoped variant would silently fail to resolve
+// another venue's tag on a shared deployment. Admin surfaces read by id instead
+// (getQrById), scoped to the caller's resolved session tenant.
 export async function getQrByCodeGlobal(code: string): Promise<QrCodeRow | null> {
   if (usingRealDb) {
     const q = await sql();
@@ -293,36 +286,23 @@ export async function getQrByCodeGlobal(code: string): Promise<QrCodeRow | null>
   return rows.find((r) => r.code === code) ?? null;
 }
 
-export async function getQrById(id: string): Promise<QrCodeRow | null> {
+export async function getQrById(tenantId: string, id: string): Promise<QrCodeRow | null> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
       SELECT * FROM qr_codes
-      WHERE id = ${id} AND tenant_id = ${TENANT_ID}
+      WHERE id = ${id} AND tenant_id = ${tenantId}
       LIMIT 1`) as Record<string, unknown>[];
     return rows[0] ? mapCode(rows[0]) : null;
   }
   const rows = await readJson<QrCodeRow>(CODES_FILE);
-  return rows.find((r) => r.id === id && r.tenantId === TENANT_ID) ?? null;
+  return rows.find((r) => r.id === id && r.tenantId === tenantId) ?? null;
 }
 
-export async function listQrCodes(limit = 500): Promise<QrCodeRow[]> {
-  if (usingRealDb) {
-    const q = await sql();
-    const rows = (await q`
-      SELECT * FROM qr_codes
-      WHERE tenant_id = ${TENANT_ID}
-      ORDER BY created_at DESC LIMIT ${limit}`) as Record<string, unknown>[];
-    return rows.map(mapCode);
-  }
-  const rows = await readJson<QrCodeRow>(CODES_FILE);
-  return rows.filter((r) => r.tenantId === TENANT_ID).slice(0, limit);
-}
-
-// Same listing, scoped to an explicit tenant. The owner dashboard resolves the
-// tenant from the signed session and asks for exactly that business's tags, so
-// the tag table it renders can never include another tenant's codes even if the
-// two ever share a database.
+// The tag listing every admin surface reads, scoped to an explicit tenant. The
+// caller resolves the tenant from the signed session and asks for exactly that
+// business's tags, so the tag table it renders can never include another
+// tenant's codes even when many venues share one database and one deployment.
 export async function listQrCodesForTenant(tenantId: string, limit = 500): Promise<QrCodeRow[]> {
   if (usingRealDb) {
     const q = await sql();
@@ -339,10 +319,11 @@ export async function listQrCodesForTenant(tenantId: string, limit = 500): Promi
 // Note there is deliberately no way to change `code` — renaming a printed
 // identifier would orphan every physical copy already in the world.
 export async function updateQrCode(
+  tenantId: string,
   id: string,
   patch: { destinationUrl?: string; label?: string; isActive?: boolean },
 ): Promise<QrCodeRow | null> {
-  const before = await getQrById(id);
+  const before = await getQrById(tenantId, id);
   if (!before) return null;
 
   const destinationUrl = patch.destinationUrl ?? before.destinationUrl;
@@ -358,13 +339,13 @@ export async function updateQrCode(
           label = ${label},
           is_active = ${isActive},
           updated_at = now()
-      WHERE id = ${id} AND tenant_id = ${TENANT_ID}
+      WHERE id = ${id} AND tenant_id = ${tenantId}
       RETURNING *`) as Record<string, unknown>[];
     after = rows[0] ? mapCode(rows[0]) : null;
   } else {
     after = await withJsonLock(async () => {
       const rows = await readJson<QrCodeRow>(CODES_FILE);
-      const i = rows.findIndex((r) => r.id === id && r.tenantId === TENANT_ID);
+      const i = rows.findIndex((r) => r.id === id && r.tenantId === tenantId);
       if (i < 0) return null;
       rows[i] = {
         ...rows[i],
@@ -380,7 +361,7 @@ export async function updateQrCode(
   if (!after) return null;
 
   if (patch.destinationUrl !== undefined && patch.destinationUrl !== before.destinationUrl) {
-    await logAudit({
+    await logAudit(tenantId, {
       qrCodeId: id,
       action: "destination_changed",
       fromValue: before.destinationUrl,
@@ -388,28 +369,28 @@ export async function updateQrCode(
     });
   }
   if (patch.isActive !== undefined && patch.isActive !== before.isActive) {
-    await logAudit({ qrCodeId: id, action: after.isActive ? "activated" : "deactivated" });
+    await logAudit(tenantId, { qrCodeId: id, action: after.isActive ? "activated" : "deactivated" });
   }
   return after;
 }
 
 // Soft-archive only. A printed QR's row is never destroyed — an archived code
 // stops redirecting but keeps its history and stays recoverable.
-export async function archiveQrCode(id: string): Promise<QrCodeRow | null> {
+export async function archiveQrCode(tenantId: string, id: string): Promise<QrCodeRow | null> {
   let after: QrCodeRow | null;
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
       UPDATE qr_codes
       SET is_active = false, archived_at = now(), updated_at = now()
-      WHERE id = ${id} AND tenant_id = ${TENANT_ID} AND archived_at IS NULL
+      WHERE id = ${id} AND tenant_id = ${tenantId} AND archived_at IS NULL
       RETURNING *`) as Record<string, unknown>[];
     after = rows[0] ? mapCode(rows[0]) : null;
-    if (!after) return getQrById(id);
+    if (!after) return getQrById(tenantId, id);
   } else {
     after = await withJsonLock(async () => {
       const rows = await readJson<QrCodeRow>(CODES_FILE);
-      const i = rows.findIndex((r) => r.id === id && r.tenantId === TENANT_ID);
+      const i = rows.findIndex((r) => r.id === id && r.tenantId === tenantId);
       if (i < 0) return null;
       if (rows[i].archivedAt) return rows[i];
       const now = new Date().toISOString();
@@ -419,7 +400,7 @@ export async function archiveQrCode(id: string): Promise<QrCodeRow | null> {
     });
     if (!after) return null;
   }
-  await logAudit({ qrCodeId: id, action: "archived" });
+  await logAudit(tenantId, { qrCodeId: id, action: "archived" });
   return after;
 }
 
@@ -428,7 +409,7 @@ export async function archiveQrCode(id: string): Promise<QrCodeRow | null> {
 // Called from after() so it never delays a guest's redirect. The counter uses a
 // single atomic UPDATE — Postgres row locking makes concurrent increments safe
 // with no read-modify-write race and no retry loop.
-export async function recordScan(input: {
+export async function recordScan(tenantId: string, input: {
   qrCodeId: string;
   userAgent: string;
   referer: string;
@@ -437,10 +418,10 @@ export async function recordScan(input: {
     const q = await sql();
     await q`
       UPDATE qr_codes SET scan_count = scan_count + 1
-      WHERE id = ${input.qrCodeId} AND tenant_id = ${TENANT_ID}`;
+      WHERE id = ${input.qrCodeId} AND tenant_id = ${tenantId}`;
     await q`
       INSERT INTO qr_scans (qr_code_id, tenant_id, user_agent, referer)
-      VALUES (${input.qrCodeId}, ${TENANT_ID}, ${input.userAgent}, ${input.referer})`;
+      VALUES (${input.qrCodeId}, ${tenantId}, ${input.userAgent}, ${input.referer})`;
     return;
   }
 
@@ -455,7 +436,7 @@ export async function recordScan(input: {
     scans.unshift({
       id: crypto.randomUUID(),
       qrCodeId: input.qrCodeId,
-      tenantId: TENANT_ID,
+      tenantId,
       scannedAt: new Date().toISOString(),
       userAgent: input.userAgent,
       referer: input.referer,
@@ -464,7 +445,7 @@ export async function recordScan(input: {
   });
 }
 
-export async function scanStats(qrCodeId: string): Promise<QrScanStats> {
+export async function scanStats(tenantId: string, qrCodeId: string): Promise<QrScanStats> {
   if (usingRealDb) {
     const q = await sql();
     const rows = (await q`
@@ -474,7 +455,7 @@ export async function scanStats(qrCodeId: string): Promise<QrScanStats> {
         count(*) FILTER (WHERE scanned_at >= now() - interval '7 days')::int AS week,
         count(*) FILTER (WHERE scanned_at >= now() - interval '30 days')::int AS month
       FROM qr_scans
-      WHERE qr_code_id = ${qrCodeId} AND tenant_id = ${TENANT_ID}`) as Record<string, number>[];
+      WHERE qr_code_id = ${qrCodeId} AND tenant_id = ${tenantId}`) as Record<string, number>[];
     const r = rows[0] ?? {};
     return {
       total: Number(r.total ?? 0),

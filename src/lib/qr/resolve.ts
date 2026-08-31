@@ -19,7 +19,7 @@ import { NextResponse, after, type NextRequest } from "next/server";
 import { clientIp } from "@/lib/wifi/request";
 import { store } from "@/lib/wifi/store";
 import { QR_BASE_URL, SCAN_IP_RULE } from "@/lib/qr/config";
-import { getQrByCode, recordScan } from "@/lib/qr/db";
+import { getQrByCodeGlobal, recordScan } from "@/lib/qr/db";
 import { printedCode } from "@/lib/qr/registry";
 import { inactiveResponse, notFoundResponse } from "@/lib/qr/statusPage";
 import { normalizeQrCode, validateDestinationUrl } from "@/lib/qr/validation";
@@ -50,10 +50,14 @@ export async function resolveTag(
   // point of failure for a physical product. A miss OR an outage falls through
   // to the printed-code registry (see lib/qr/registry.ts) so a QR that exists in
   // the real world always resolves somewhere sensible.
-  let qr = null as Awaited<ReturnType<typeof getQrByCode>>;
+  // Tenant-agnostic on purpose: a printed code is globally unique and owned by
+  // exactly one venue, so the resolver must find it no matter which tenant a
+  // shared deployment is otherwise serving. Attribution below files the event
+  // under the row's own tenant, never the request's.
+  let qr = null as Awaited<ReturnType<typeof getQrByCodeGlobal>>;
   let dbReachable = true;
   try {
-    qr = await getQrByCode(code);
+    qr = await getQrByCodeGlobal(code);
   } catch (err) {
     dbReachable = false;
     console.error("[qr] lookup failed, falling back to printed registry", err);
@@ -110,7 +114,9 @@ export async function resolveTag(
       const hits = await store.incrWithTtl(`qr:ip:${ip}`, SCAN_IP_RULE.window);
       if (hits > SCAN_IP_RULE.max) return;
       // Legacy per-tag scan counter (feeds the QR admin), kept for continuity.
-      await recordScan({ qrCodeId: qr.id, userAgent, referer });
+      // Filed under the tag's own owner — the row we already fetched — so the
+      // counter and telemetry match the tenant the tag belongs to.
+      await recordScan(qr.tenantId, { qrCodeId: qr.id, userAgent, referer });
       // The unified event the owner dashboard reads + streams live. A 5s
       // idempotency bucket collapses a prefetch/double-hit while still counting
       // a genuine repeat tap moments later.

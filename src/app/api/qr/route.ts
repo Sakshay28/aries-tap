@@ -1,23 +1,22 @@
 // Admin: list + create QR codes. Same auth posture as every other admin route
-// in this app — the shared signed `aries_admin` cookie.
+// in this app — the shared signed `aries_admin` cookie — but the tenant is
+// resolved from that signed session (resolveOwnerTenant), never a build-time
+// constant, so on a shared deployment an admin only ever lists and creates
+// their own venue's codes.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyToken } from "@/lib/wifi/session";
-import { ADMIN_COOKIE, QR_BASE_IS_LOCAL, QR_BASE_URL, permanentUrlFor } from "@/lib/qr/config";
-import { DuplicateCodeError, createQrCode, listQrCodes } from "@/lib/qr/db";
+import { QR_BASE_IS_LOCAL, QR_BASE_URL, permanentUrlFor } from "@/lib/qr/config";
+import { DuplicateCodeError, createQrCode, listQrCodesForTenant } from "@/lib/qr/db";
+import { resolveOwnerTenant } from "@/lib/events/tenant";
 import { normalizeQrCode, sanitizeLabel, validateDestinationUrl } from "@/lib/qr/validation";
 import { normalizeTable } from "@/lib/table/session";
 
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const payload = await verifyToken<{ kind?: string }>(req.cookies.get(ADMIN_COOKIE)?.value);
-  return payload?.kind === "admin";
-}
-
 export async function GET(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  const rows = await listQrCodes();
+  const rows = await listQrCodesForTenant(tenant);
   return NextResponse.json({
     baseUrl: QR_BASE_URL,
     baseIsLocal: QR_BASE_IS_LOCAL,
@@ -26,7 +25,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   if (!dest.ok) return NextResponse.json({ error: dest.reason }, { status: 422 });
 
   try {
-    const row = await createQrCode({
+    const row = await createQrCode(tenant, {
       code,
       destinationUrl: dest.url,
       label: sanitizeLabel(body.label),

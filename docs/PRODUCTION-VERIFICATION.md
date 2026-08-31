@@ -9,10 +9,14 @@ resource exists, or a hands-on step. Nothing below has been performed.
 
 ## A. Database (Postgres)
 
-- [ ] Provide a **disposable** `TEST_DATABASE_URL` (never production Neon).
-- [ ] Run the acceptance suite against it and confirm the log says
-      `persistence track: Postgres` (the suite asserts this — it fails rather than
-      silently using JSON):
+- [ ] **One command, no manual setup:** `npm run test:pg` brings up a throwaway
+      `postgres:16` + the Neon HTTP proxy in Docker (`docker-compose.test.yml`),
+      runs the acceptance suite against real SQL — it asserts `persistence track:
+      Postgres` and fails rather than silently using JSON — then tears the
+      containers down. This is the same wiring CI's `postgres-acceptance` job
+      uses, so a green run here is CI's green run. Requires Docker.
+- [ ] Or point at an existing disposable `TEST_DATABASE_URL` (never production
+      Neon) and confirm the log says `persistence track: Postgres`:
       ```
       TEST_DATABASE_URL=postgres://…  npm test
       ```
@@ -37,12 +41,20 @@ resource exists, or a hands-on step. Nothing below has been performed.
 
 ## B. Realtime (Ably, multi-instance)
 
-- [ ] Set `ARIES_REALTIME=ably` + a real server-side `ABLY_API_KEY`.
-- [ ] Deploy to **≥2 instances** (or two `next start` processes on different
-      ports sharing one Postgres + one Ably key).
-- [ ] Open a dashboard on instance #1; ingest a tap on instance #2; confirm the
-      dashboard on #1 updates live. (This is the one thing the mocked adapter
-      test cannot prove — it needs a real Ably fan-out across processes.)
+- [ ] **Automated cross-connection proof:** `ABLY_API_KEY=… npm run test:ably`
+      publishes over REST from one `AblyBus` and subscribes over Realtime from a
+      second one on a **separate connection**, asserting the event fans out to the
+      right tenant and never to another (`tests/ably-live.test.ts`). This closes
+      the exact gap the mocked adapter test cannot — real Ably fan-out across two
+      clients. It self-skips without the key. CI runs it when the repository
+      variable `RUN_ABLY_LIVE=true` and the `ABLY_API_KEY` secret are set.
+- [ ] Set `ARIES_REALTIME=ably` + a real server-side `ABLY_API_KEY`. (Misconfig
+      now fails fast: selecting `ably` without a key throws at bus creation — an
+      SSE connect surfaces it — rather than silently degrading to no live fan-out.)
+- [ ] End-to-end across real processes: deploy to **≥2 instances** (or two
+      `next start` processes on different ports sharing one Postgres + one Ably
+      key). Open a dashboard on instance #1; ingest a tap on instance #2; confirm
+      the dashboard on #1 updates live.
 - [ ] Open dashboards for two different tenants; confirm no cross-tenant delivery
       (each sees only `tap:<its-tenant>` channel events).
 

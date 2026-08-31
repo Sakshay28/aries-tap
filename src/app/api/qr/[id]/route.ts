@@ -3,28 +3,24 @@
 // identifier would orphan every physical copy already in the world.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyToken } from "@/lib/wifi/session";
-import { ADMIN_COOKIE, permanentUrlFor } from "@/lib/qr/config";
+import { permanentUrlFor } from "@/lib/qr/config";
 import { archiveQrCode, getQrById, listAudit, scanStats, updateQrCode } from "@/lib/qr/db";
+import { resolveOwnerTenant } from "@/lib/events/tenant";
 import { sanitizeLabel, validateDestinationUrl } from "@/lib/qr/validation";
-
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const payload = await verifyToken<{ kind?: string }>(req.cookies.get(ADMIN_COOKIE)?.value);
-  return payload?.kind === "admin";
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   const { id } = await params;
-  const row = await getQrById(id);
+  const row = await getQrById(tenant, id);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  const [stats, history] = await Promise.all([scanStats(id), listAudit(id)]);
+  const [stats, history] = await Promise.all([scanStats(tenant, id), listAudit(tenant, id)]);
   return NextResponse.json({
     code: { ...row, permanentUrl: permanentUrlFor(row.code) },
     stats,
@@ -36,7 +32,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   const { id } = await params;
@@ -66,7 +63,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Nothing to update." }, { status: 422 });
   }
 
-  const row = await updateQrCode(id, patch);
+  const row = await updateQrCode(tenant, id, patch);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
   return NextResponse.json({ code: { ...row, permanentUrl: permanentUrlFor(row.code) } });
 }
@@ -77,11 +74,12 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin(req))) {
+  const tenant = await resolveOwnerTenant(req);
+  if (!tenant) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   const { id } = await params;
-  const row = await archiveQrCode(id);
+  const row = await archiveQrCode(tenant, id);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
   return NextResponse.json({ code: { ...row, permanentUrl: permanentUrlFor(row.code) } });
 }

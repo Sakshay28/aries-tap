@@ -18,7 +18,7 @@
 // dashboard catches up on its next reconnect", never to wrong data.
 
 import type { TapEvent } from "@/lib/events/types";
-import { AblyBus } from "./ably";
+import { AblyBus, assertAblyConfigured } from "./ably";
 
 export type EventHandler = (event: TapEvent) => void;
 
@@ -87,7 +87,12 @@ const gb = globalThis as unknown as { __ariesBus?: RealtimeBus };
 // deployment can't silently change transports.
 function createBus(): RealtimeBus {
   const mode = (process.env.ARIES_REALTIME || "in-process").trim().toLowerCase();
-  if (mode === "ably") return new AblyBus();
+  if (mode === "ably") {
+    // Fail fast on a misconfigured managed transport rather than silently
+    // degrading to no live fan-out (see assertAblyConfigured).
+    assertAblyConfigured();
+    return new AblyBus();
+  }
   return new InProcessBus();
 }
 

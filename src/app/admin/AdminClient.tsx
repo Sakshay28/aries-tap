@@ -118,7 +118,7 @@ export function AdminClient() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/overview"
+            href="/owner"
             className="row flex items-center gap-2 rounded-full border border-line px-4 py-2 text-[13px] font-medium"
           >
             <Activity size={15} strokeWidth={1.75} className="text-accent" aria-hidden />

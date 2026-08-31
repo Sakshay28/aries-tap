@@ -18,7 +18,7 @@ import {
   type ReviewAnalytics,
   type Feedback,
   type ChatData,
-} from "@/app/admin/overview/OverviewClient";
+} from "@/components/dashboard/metrics";
 import logoTaffeta from "@/images/logo-taffeta.png";
 import logoMagnolia from "@/images/logo-magnolia.png";
 import logoLazymojo from "@/images/logo-lazymojo.png";
@@ -31,22 +31,20 @@ const VENUE_LOGOS: Record<string, { src: string }> = {
   lazymojo: logoLazymojo,
 };
 
-// The venue's logo on a clean white chip so a transparent, dark-ink mark reads
-// in both light and dark themes. `size` is the logo height in px.
-function VenueMark({ id, name, size = 28 }: { id: string; name: string; size?: number }) {
+// The venue's logo, transparent and sitting directly on the warm background —
+// the same way Aries Tap presents brand marks. `size` is the logo height in px.
+function VenueMark({ id, name, size = 44 }: { id: string; name: string; size?: number }) {
   const logo = VENUE_LOGOS[id];
   if (!logo)
     return <span className="text-[18px] font-semibold tracking-[-0.01em]">{name}</span>;
   return (
-    <span className="inline-flex items-center rounded-2xl bg-white px-4 py-2 shadow-[var(--od-elev)] ring-1 ring-black/5">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={logo.src}
-        alt={name}
-        style={{ height: size, width: "auto" }}
-        className="max-w-[190px] object-contain"
-      />
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logo.src}
+      alt={name}
+      style={{ height: size, width: "auto" }}
+      className="max-w-[230px] object-contain object-left"
+    />
   );
 }
 
@@ -169,7 +167,7 @@ export function OwnerClient() {
         <div className="od-root min-h-svh">
           <div className="mx-auto w-full max-w-md px-5 pt-[max(1.75rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
             <div className="mb-3">
-              <VenueMark id={b.venue.id} name={b.venue.name} size={22} />
+              <VenueMark id={b.venue.id} name={b.venue.name} size={32} />
             </div>
             <Detail
               tile={selected.tile}
@@ -217,8 +215,8 @@ export function OwnerClient() {
         <div className="mt-6 flex flex-col gap-7">
           {venues.map((b) => (
             <section key={b.venue.id}>
-              <div className="mb-3.5">
-                <VenueMark id={b.venue.id} name={b.venue.name} size={30} />
+              <div className="mb-4">
+                <VenueMark id={b.venue.id} name={b.venue.name} size={56} />
               </div>
               <MetricGrid
                 counts={countsOf(b)}

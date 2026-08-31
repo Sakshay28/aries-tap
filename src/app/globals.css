@@ -1980,6 +1980,7 @@ body:has(.lb) {
 .lb-in-cards > :nth-child(3) { animation-delay: 560ms; }
 .lb-in-cards > :nth-child(4) { animation-delay: 630ms; }
 .lb-in-cards > :nth-child(5) { animation-delay: 700ms; }
+.lb-in-cards > :nth-child(6) { animation-delay: 770ms; }
 
 @keyframes lb-photo-in {
   from {
@@ -2390,29 +2391,19 @@ body:has(.lb) {
   background:
     radial-gradient(120% 60% at 50% -10%, var(--od-bg-2) 0%, var(--od-bg) 46%) fixed;
   color: var(--od-ink);
+  /* Intentionally light-only: the dashboard keeps its warm, premium palette even
+     on a phone set to dark mode. `color-scheme: light` also stops the browser
+     from auto-darkening form controls, scrollbars and the like. */
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-@media (prefers-color-scheme: dark) {
-  .od-root {
-    --od-bg: #14120f;
-    --od-bg-2: #191611;
-    --od-surface: #201c17;
-    --od-surface-2: #241f19;
-    --od-border: rgba(244, 241, 234, 0.09);
-    --od-border-2: rgba(244, 241, 234, 0.16);
-    --od-elev: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
-    --od-elev-nav: 0 -1px 0 rgba(0, 0, 0, 0.4), 0 -8px 24px rgba(0, 0, 0, 0.5);
-    --od-ink: #f3efe6;
-    --od-ink-2: #b3ab9c;
-    --od-ink-3: #857e70;
-    --od-accent: #d3a153;
-    --od-accent-soft: #2e2619;
-    --od-espresso: #f3efe6;
-    --od-tap-bg: #2c2415;  --od-wa-bg: #16281d;
-    --od-review-bg: #2d2614; --od-view-bg: #1b2430; --od-cta-bg: #241f33;
-  }
+/* When the light-only dashboard is on screen, keep the page ground light too, so
+   a dark-mode phone shows no dark body behind it on overscroll or in safe areas. */
+body:has(.od-root) {
+  background: #f4f1ea;
+  color-scheme: light;
 }
 
 /* Layout shell ------------------------------------------------------- */
@@ -2469,7 +2460,6 @@ body:has(.lb) {
 }
 .od-btn:active { transform: scale(0.98); }
 .od-btn-primary { background: var(--od-espresso); color: var(--od-bg); }
-@media (prefers-color-scheme: dark) { .od-btn-primary { color: #14120f; } }
 .od-btn-soft {
   background: var(--od-surface);
   color: var(--od-ink);

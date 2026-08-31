@@ -65,6 +65,15 @@ function requireKey(): string {
   return key;
 }
 
+// Eager configuration check, called at bus selection (see bus.ts). A deployment
+// that opts into the managed transport but forgets the key should fail loudly
+// the first time the bus is used — an SSE connect surfaces a 500, a publish logs
+// — rather than silently degrading to a dashboard that only ever shows the
+// resync snapshot and no live updates. Constructs no client and loads no SDK.
+export function assertAblyConfigured(): void {
+  requireKey();
+}
+
 function errMsg(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
