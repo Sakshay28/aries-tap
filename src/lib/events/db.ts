@@ -29,6 +29,7 @@ import {
   type TapEventMeta,
   type TapEventType,
 } from "./types";
+import { compareTagStatsByRecency } from "./analytics";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 export const usingRealDb = Boolean(DATABASE_URL);
@@ -440,7 +441,7 @@ export async function overviewMetrics(tenantId: string, tags: TagInfo[]): Promis
         lastActivity: st?.last_activity ? new Date(st.last_activity).toISOString() : null,
       };
     })
-    .sort((a, b) => b.taps - a.taps || (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""))
+    .sort(compareTagStatsByRecency)
     // Every table, not just a leaderboard — the simple dashboard's Taps card
     // breaks the total down per table, so all of a venue's tags must be present.
     .slice(0, 500);

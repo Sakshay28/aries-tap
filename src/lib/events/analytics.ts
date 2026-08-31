@@ -95,6 +95,32 @@ function taps14d(events: TapEvent[]): SeriesPoint[] {
 // tolerated rather than dropped).
 export type TagInfo = { code: string; label: string; isActive: boolean };
 
+// Table number pulled out of a tag code ("T21" → 21) for a stable, human order
+// among tables that have no activity to sort by.
+function tagTableNo(code: string): number {
+  const m = /(\d+)/.exec(code);
+  return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+// Order for the per-table Taps breakdown: most recently active table first, so a
+// fresh tap or scan lifts its table straight to the top. Tables with no activity
+// yet sink to the bottom, kept in table-number order so the quiet tail stays
+// tidy. Exported and reused by the SQL path (db.ts) so the two data planes order
+// identically. `lastActivity` is an ISO-8601 string, which sorts chronologically.
+export function compareTagStatsByRecency(a: TagStat, b: TagStat): number {
+  const la = a.lastActivity;
+  const lb = b.lastActivity;
+  if (la && lb) {
+    if (la !== lb) return la < lb ? 1 : -1; // later timestamp first
+  } else if (la) {
+    return -1; // a active, b never tapped → a first
+  } else if (lb) {
+    return 1; // b active, a never tapped → b first
+  }
+  if (b.taps !== a.taps) return b.taps - a.taps; // tiebreak: busier table first
+  return tagTableNo(a.code) - tagTableNo(b.code) || a.code.localeCompare(b.code);
+}
+
 function topTags(events: TapEvent[], tags: TagInfo[], dayStart: number): TagStat[] {
   const stat = new Map<string, TagStat>();
   const ensure = (code: string, info?: TagInfo): TagStat => {
@@ -122,7 +148,7 @@ function topTags(events: TapEvent[], tags: TagInfo[], dayStart: number): TagStat
     if (!s.lastActivity || e.createdAt > s.lastActivity) s.lastActivity = e.createdAt;
   }
   return [...stat.values()]
-    .sort((a, b) => b.taps - a.taps || (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""))
+    .sort(compareTagStatsByRecency)
     // Every table, not just a leaderboard — the simple dashboard's Taps card
     // breaks the total down per table, so all of a venue's tags must be present.
     .slice(0, 500);
